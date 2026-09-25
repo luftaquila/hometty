@@ -1,0 +1,265 @@
+package io.luftaquila.hometty
+
+import android.content.Context
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.luftaquila.hometty.core.*
+import io.luftaquila.hometty.data.*
+import io.luftaquila.hometty.commands.CommandEvent
+import io.luftaquila.hometty.commands.LauncherEngine
+import io.luftaquila.hometty.platform.*
+import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.resources.message
+import javax.inject.Inject
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+
+/**
+ * The launcher window: which screen is open, the home terminal as the screens drive it, and
+ * settings and records as the screens edit them. Work that outlives the window belongs to
+ * [LauncherRuntime]; backup and fonts have their own models.
+ */
+@HiltViewModel
+class HomeViewModel
+@Inject
+constructor(
+    @ApplicationContext context: Context,
+    banner: ErrorBanner,
+    private val storage: Storage,
+    val device: DeviceAccess,
+    private val engine: LauncherEngine,
+    catalog: AppCatalog,
+    private val terminals: TerminalHost,
+    private val runtime: LauncherRuntime,
+    private val notices: TerminalNotices,
+) : LauncherViewModel(context, banner) {
+    val settings =
+        storage.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SettingsSnapshot())
+    val entries = storage.entries.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val apps = catalog.apps
+    // Declared before init, which reads it.
+    private val launcherPreferences = context.getSharedPreferences("launcher", Context.MODE_PRIVATE)
+    val route = MutableStateFlow<Route>(Route.Home)
+    val appearancePreview = MutableStateFlow<Map<String, String>?>(null)
+    val settingsTarget = MutableStateFlow<String?>(null)
+    private val navigationHistory = mutableListOf<Route>()
+
+    /** Screens that back can return to, oldest first. */
+    val backStack: List<Route>
+        get() = navigationHistory.toList()
+
+    val error = banner.message
+    val ready = runtime.ready
+    val session = terminals.session
+
+    init {
+        if (firstRun) route.value = Route.Start
+        runtime.start()
+        viewModelScope.launch {
+            for (destination in terminals.bridge.navigation) navigate(destination)
+        }
+        viewModelScope.launch { route.collect { runtime.atHome.value = it == Route.Home } }
+        // The home screen has no banner: while its terminal runs, errors print there instead.
+        viewModelScope.launch {
+            combine(banner.message, route, session) { message, route, terminal ->
+                    message.takeIf { route == Route.Home && terminal != null }
+                }
+                .collect { message ->
+                    if (message != null) {
+                        notices.print(message)
+                        banner.dismiss()
+                    }
+                }
+        }
+    }
+
+    fun showError(text: String) = banner.show(text)
+
+    fun dismissError() = banner.dismiss()
+
+    fun navigate(destination: Route) {
+        if (destination == route.value) return
+        if (destination == Route.Home) navigationHistory.clear()
+        else navigationHistory.add(route.value)
+        appearancePreview.value = null
+        settingsTarget.value = null
+        route.value = destination
+        banner.dismiss()
+    }
+
+    fun back() {
+        settingsTarget.value = null
+        appearancePreview.value = null
+        route.value = navigationHistory.removeLastOrNull() ?: Route.Home
+        banner.dismiss()
+    }
+
+    fun openSetting(key: String) {
+        navigate(settingsRoute(key))
+        settingsTarget.value = key
+    }
+
+    /** True until the getting started screen has been closed once. */
+    val firstRun
+        get() = !launcherPreferences.getBoolean("startDone", false)
+
+    fun finishStart() {
+        launcherPreferences.edit().putBoolean("startDone", true).apply()
+        route.value = Route.Home
+        navigationHistory.clear()
+    }
+
+    fun foreground(active: Boolean) = runtime.foreground(active)
+
+    /** Prints [text] in the home terminal after the current time. */
+    fun append(text: String) = notices.print(text)
+
+    /** Opens what the notification printed with [id] opens in the shade. */
+    fun openNotification(id: Long) = launchAction {
+        val target = notices.target(id) ?: return@launchAction
+        device.openNotification(target.intent, target.packageName, target.user, target.app)
+    }
+
+    /**
+     * Leaves notifications from the app of the one printed with [id] out from now on, through its
+     * rule (made if it has none), and says so.
+     */
+    fun hideNotifications(id: Long) = launchAction {
+        val target = notices.target(id) ?: return@launchAction
+        val kind = "notificationRule"
+        val rule = storage.list(kind).firstOrNull { it.fields["package"] == target.packageName }
+        if (rule != null) storage.modify(kind, rule.name) { it + ("enabled" to "false") }
+        else {
+            // Rules are named after their app; another app may have the same name.
+            val name = if (storage.find(kind, target.app) == null) target.app else target.packageName
+            storage.put(kind, name, mapOf("package" to target.packageName, "enabled" to "false"))
+        }
+        notices.print(context.getString(TextR.string.message_notifications_hidden, target.app))
+    }
+
+    // The home terminal
+
+    /** Runs a launcher command from a settings link and shows its output on the home screen. */
+    fun runFromSettings(command: String) {
+        navigate(Route.Home)
+        submit(command)
+    }
+
+    /** Output of a command run from settings without leaving them: (command, text). */
+    val commandResult = MutableStateFlow<Pair<String, String>?>(null)
+
+    /** Runs a launcher command in place and shows its output in a dialog over settings. */
+    fun runInDialog(vararg argv: String) = launchAction {
+        val output = StringBuilder()
+        try {
+            engine.execute(argv.toList()).collect { event ->
+                if (event is CommandEvent.Output) output.appendLine(event.text)
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            output.appendLine(context.message(e))
+        }
+        commandResult.value = argv.joinToString(" ") to output.toString().trimEnd()
+    }
+
+    /** Puts [value] on the prompt line without running it. */
+    fun stageCommand(value: String) = launchAction {
+        runtime.openTerminal()
+        val terminal = requireNotNull(session.value)
+        // withTimeoutOrNull: waiting in vain must say why, not end silently.
+        withTimeoutOrNull(2000) { terminal.atPrompt.first { it } }
+            ?: error(context.getString(TextR.string.message_finish_the_foreground_terminal_command_first))
+        terminal.write(CLEAR_LINE + value.replace("\n", " "))
+        navigate(Route.Home)
+    }
+
+    /** Types [value] at the prompt and runs it. */
+    fun submit(value: String) = launchAction {
+        if (value.isBlank()) return@launchAction
+        runtime.openTerminal()
+        val terminal = requireNotNull(session.value)
+        require(terminal.atPrompt.value) {
+            context.getString(TextR.string.message_finish_the_foreground_terminal_command_first)
+        }
+        terminal.write(CLEAR_LINE + value + "\n")
+        navigate(Route.Home)
+    }
+
+    /** Recalls an earlier (positive [delta]) or later command line. */
+    fun history(delta: Int) {
+        session.value?.key(if (delta > 0) 5 else 6)
+    }
+
+    fun ensureTerminal() = launchAction { runtime.openTerminal() }
+
+    fun stopTerminal() = runtime.stopTerminal()
+
+    // Settings and records
+
+    /** Saves [values]; [after] then runs with whether they were saved (failures show an error). */
+    fun updateSettings(values: Map<String, String>, after: (saved: Boolean) -> Unit = {}) =
+        launchAction {
+            var saved = false
+            try {
+                storage.update(values)
+                saved = true
+            } finally {
+                after(saved)
+            }
+        }
+
+    fun setSetting(key: String, value: String, after: (saved: Boolean) -> Unit = {}) =
+        updateSettings(mapOf(key to value), after)
+
+    fun resetSetting(key: String) = launchAction { storage.reset(key) }
+
+    /** Sets a per-app preference such as favorite or hidden. */
+    fun setAppFlag(appId: String, field: String, value: Boolean) = launchAction {
+        storage.modify("app", appId) { it + (field to value.toString()) }
+    }
+
+    fun saveEntry(
+        kind: String,
+        name: String,
+        fields: Map<String, String>,
+        done: () -> Unit,
+        failed: (String) -> Unit = banner::show,
+    ) = launchAction {
+        try {
+            // Saving validates the record.
+            storage.put(kind, name, fields)
+            done()
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            failed(context.message(e))
+        }
+    }
+
+    fun deleteEntry(entry: Entry) = launchAction { storage.remove(entry.kind, entry.id) }
+
+    fun resetPreferences() = launchAction {
+        stopTerminal()
+        withContext(Dispatchers.IO) {
+            storage.restore(
+                Storage.ImportPreview(
+                    Backup(settings = SettingsSnapshot(), entries = emptyList()),
+                    null,
+                )
+            )
+            terminals.historyFile().delete()
+        }
+        navigate(Route.Home)
+    }
+
+    /** Every display setting back to its default; an imported font stays imported. */
+    fun recoverAppearance() = launchAction {
+        storage.update(
+            Settings.all
+                .filter { it.category == "appearance" && it.key != Settings.customFont.key }
+                .associate { it.key to it.default }
+        )
+    }
+
+    override fun onCleared() = runtime.uiClosed()
+}
