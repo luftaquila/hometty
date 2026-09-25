@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name="io.luftaquila.hometty.LaunchProbeActivity" android:exported="true" android:label="한글 테스트 앱">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity>
+        <activity-alias android:name="io.luftaquila.hometty.MixedCaseProbe" android:targetActivity="io.luftaquila.hometty.LaunchProbeActivity" android:label="Mixed Case App" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+    </application>
+</manifest>
