@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "hometty"
 
-include(":resources", ":core")
+include(":resources", ":core", ":data")
