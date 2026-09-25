@@ -15,3 +15,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "hometty"
+
+include(":core")
