@@ -1,0 +1,129 @@
+--- a/busybox/libbb/lineedit.c
++++ b/busybox/libbb/lineedit.c
+@@ -1202,10 +1202,50 @@
+ }
+ 
+ /* Do TAB completion */
++/* Optional hometty completion provider: argv transport, never shell evaluation.
++ * Child timeout bounds an unavailable launcher; normal file completion remains the fallback. */
++static void hometty_complete(const char *line)
++{
++    const char *helper = getenv("HOMETTY_COMPLETER");
++    int fds[2], status;
++    pid_t pid;
++    FILE *fp;
++    char *candidate;
++    unsigned count = 0;
++    if (!helper || helper[0] != '/' || pipe(fds) != 0)
++        return;
++    pid = fork();
++    if (pid == 0) {
++        close(fds[0]);
++        dup2(fds[1], STDOUT_FILENO);
++        close(fds[1]);
++        close(STDIN_FILENO);
++        close(STDERR_FILENO);
++        signal(SIGALRM, SIG_DFL);
++        alarm(2);
++        execl(helper, "hometty", "__complete", line, (char *)NULL);
++        _exit(127);
++    }
++    close(fds[1]);
++    if (pid < 0) { close(fds[0]); return; }
++    fp = fdopen(fds[0], "r");
++    if (fp) {
++        while ((candidate = xmalloc_fgetline(fp)) != NULL) {
++            if (candidate[0] && strlen(candidate) < MAX_LINELEN && count++ < 200)
++                add_match(candidate);
++            else
++                free(candidate);
++        }
++        fclose(fp);
++    } else close(fds[0]);
++    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
++}
++
+ static NOINLINE void input_tab(smallint *lastWasTab)
+ {
+ 	char *chosen_match;
+ 	char *match_buf;
++	char *hometty_line;
+ 	size_t len_found;
+ 	/* Length of string used for matching */
+ 	unsigned match_pfx_len = match_pfx_len;
+@@ -1251,10 +1291,15 @@
+ 		cursor_mb = strlen(match_buf);
+ 	}
+ # endif
++	hometty_line = xstrdup(match_buf);
+ 	find_type = build_match_prefix(match_buf);
+ 
+ 	/* Free up any memory already allocated */
+ 	free_tab_completion_data();
++	hometty_complete(hometty_line);
++	free(hometty_line);
++	if (matches)
++		match_pfx_len = strlen(match_buf);
+ 
+ # if ENABLE_FEATURE_USERNAME_COMPLETION
+ 	/* If the word starts with ~ and there is no slash in the word,
+@@ -2151,6 +2196,7 @@
+ 
+ static void win_changed(int nsig UNUSED_PARAM)
+ {
++	S.SIGWINCH_count++;
+ 	if (S.ok_to_redraw) {
+ 		/* We are in read_key(), safe to redraw immediately */
+ 		int sv_errno = errno;
+@@ -2159,7 +2205,7 @@
+ 		errno = sv_errno;
+ 	} else {
+ 		/* Signal main loop that redraw is necessary */
+-		S.SIGWINCH_count++;
++		/* Counted above, including immediate redraws. */
+ 	}
+ }
+ #endif
+@@ -2191,12 +2237,18 @@
+ 				return -1;
+ 			}
+ //FIXME: still races here with signals, but small window to poll() inside read_key
++			IF_FEATURE_EDITING_WINCH(unsigned winch_before = S.SIGWINCH_count;)
+ 			IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 1;)
+ 			/* errno = 0; - read_key does this itself */
+ 			ic = read_key(STDIN_FILENO, read_key_buffer, timeout);
+ 			IF_FEATURE_EDITING_WINCH(S.ok_to_redraw = 0;)
+ 			if (errno != EINTR)
+ 				break;
++			/* A resize interrupts poll on Android; preserve the edited line. */
++#if ENABLE_FEATURE_EDITING_WINCH
++			if (S.SIGWINCH_count != winch_before && bb_got_signal == 0)
++				continue;
++#endif
+ 			if (state->flags & LI_INTERRUPTIBLE) {
+ 				/* LI_INTERRUPTIBLE bails out on EINTR,
+ 				 * but nothing really guarantees that bb_got_signal
+@@ -2589,7 +2641,10 @@
+ 		case '\r':
+ 		vi_case('\n'|VI_CMDMODE_BIT:)
+ 		vi_case('\r'|VI_CMDMODE_BIT:)
+-			/* Enter */
++			/* Enter: distinguish execution from the CR/LF used to wrap input. */
++			put_till_end_and_adv_cursor();
++			if (getenv("HOMETTY_SHELL_MARKS"))
++				fputs("\033]133;C\007", stdout);
+ 			goto_new_line();
+ 			break_out = 1;
+ 			break;
+--- a/busybox/shell/ash.c
++++ b/busybox/shell/ash.c
+@@ -10837,6 +10837,9 @@
+ 		bb_got_signal = 0;
+ 		INT_OFF; /* no longjmp'ing out of read_line_input please */
+ 		nr = read_line_input(line_input_state, cmdedit_prompt, buf, IBUFSIZ);
++		/* hometty colors its prompt/input; commands start with default terminal colors. */
++		if (lookupvar("HOMETTY_SHELL_COLORS"))
++			full_write(STDOUT_FILENO, "\033[0m", 4);
+ 		if (bb_got_signal == SIGINT)
+ 			write(STDOUT_FILENO, "^C\n", 3);
+ 		INT_ON; /* here non-blocked SIGINT will longjmp */

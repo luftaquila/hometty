@@ -1,0 +1,30 @@
+[
+  {
+    "name": "busybox.tar.gz",
+    "url": "https://codeload.github.com/topjohnwu/ndk-busybox/tar.gz/1c0ca97aafb9698ab7770ce1f67af1a84b469cdb",
+    "destination": "busybox",
+    "strip_root": true,
+    "sha256": "bf8847ea697a065d52fe46dcca25aea236d217b300b70b80d14345c7fe444ba9"
+  },
+  {
+    "name": "selinux.tar.gz",
+    "url": "https://codeload.github.com/topjohnwu/selinux/tar.gz/8c6acc0d7792cda5f203dfd8e94c633e9dbfdeae",
+    "destination": "selinux",
+    "strip_root": true,
+    "sha256": "308b4419b6691bd528cbfb5a482695f71a4e614551e427c9c6a6ae5a4f0ea420"
+  },
+  {
+    "name": "pcre.tar.gz",
+    "url": "https://android.googlesource.com/platform/external/pcre/+archive/8e12681a1a252fd581830b2f65d1e154a2030bb9.tar.gz",
+    "destination": "pcre",
+    "strip_root": false,
+    "tree_sha256": "167273191da4b0b0163b06dcd05347eac85c4e93f1cdb35cd6cca05c66be8d54"
+  },
+  {
+    "name": "pcre2_workaround.c",
+    "url": "https://raw.githubusercontent.com/topjohnwu/Magisk/2c6adbc69ba0e5dce09cd13c6d9aca5de30efe76/native/src/external/pcre2_workaround.c",
+    "destination": "pcre2_workaround.c",
+    "strip_root": false,
+    "sha256": "55ec145ad5015f7999c49d2a6fdce9e869964dbc7ad83038616dbd961e263937"
+  }
+]
