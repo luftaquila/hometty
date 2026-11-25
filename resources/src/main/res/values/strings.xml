@@ -392,6 +392,11 @@
   <string name="start_write_settings_desc">"Changes the screen brightness with brightness."</string>
   <string name="error_home_folder">"Cannot open folder: %1$s"</string>
   <string name="message_home_folder_fallback">"Cannot open home folder %1$s, so the app folder is used. Check Settings > Terminal > Home folder."</string>
+  <string name="label_folder_app">"App folder"</string>
+  <string name="label_folder_storage">"Internal storage"</string>
+  <string name="label_folder_parent">".. (parent folder)"</string>
+  <string name="label_folder_none">"No subfolders"</string>
+  <string name="label_folder_use">"Use this folder"</string>
   <string name="label_text_color">"Text color"</string>
   <string name="notification_color_default">"Terminal\'s text color"</string>
   <string name="label_color_code">"Color code"</string>

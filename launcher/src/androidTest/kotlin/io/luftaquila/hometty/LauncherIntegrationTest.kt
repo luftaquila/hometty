@@ -572,6 +572,30 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun homeFolderIsPickedFromFoldersTheShellCanEnter(): Unit = runBlocking {
+        val home = File(context.filesDir, "home").apply { mkdirs() }
+        val picked = File(home, "picked-home").apply { mkdirs() }
+        val model = model
+        compose.runOnUiThread { model.openSetting("terminal.home") }
+        compose.waitUntil(5000) {
+            compose.onAllNodesWithTag("setting:terminal.home").fetchSemanticsNodes().isNotEmpty()
+        }
+        // The opened setting is also shown highlighted at the top, so it can appear twice.
+        compose.onAllNodesWithTag("setting:terminal.home").onFirst().performClick()
+        compose.onNodeWithText(context.getString(TextR.string.label_folder_app)).performClick()
+        compose.waitUntil(5000) {
+            compose.onAllNodesWithTag("folder:picked-home").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("folder:picked-home").performClick()
+        compose.onNodeWithTag("folderPath").assertTextEquals(picked.path)
+        compose.onNodeWithTag("useFolder").performClick()
+        compose.waitUntil(5000) {
+            runBlocking { storage.snapshot().string("terminal.home") == picked.path }
+        }
+        picked.delete()
+    }
+
+    @Test
     fun backReturnsToTheSettingsScrollPosition() {
         val model = model
         fun offset() =

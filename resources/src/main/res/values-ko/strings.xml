@@ -389,6 +389,11 @@
   <string name="start_write_settings_desc">"brightness로 화면 밝기를 바꿉니다."</string>
   <string name="error_home_folder">"폴더를 열 수 없습니다: %1$s"</string>
   <string name="message_home_folder_fallback">"홈 폴더 %1$s를 열 수 없어 앱 폴더를 씁니다. 설정 > 터미널 > 홈 폴더를 확인하세요."</string>
+  <string name="label_folder_app">"앱 폴더"</string>
+  <string name="label_folder_storage">"내부 저장소"</string>
+  <string name="label_folder_parent">".. (상위 폴더)"</string>
+  <string name="label_folder_none">"하위 폴더 없음"</string>
+  <string name="label_folder_use">"이 폴더 사용"</string>
   <string name="label_text_color">"글자색"</string>
   <string name="notification_color_default">"터미널 기본 글자색"</string>
   <string name="label_color_code">"색 코드"</string>

@@ -462,7 +462,11 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
     }
     editingKey?.let { key ->
         val definition = Settings.byKey.getValue(key)
-        SettingDialog(
+        if (key == Settings.shellHome.key)
+            HomeFolderDialog(settings.string(key), { editingKey = null }) { value ->
+                model.setSetting(key, value) { saved -> if (saved) editingKey = null }
+            }
+        else SettingDialog(
             definition,
             settings,
             { editingKey = null },
