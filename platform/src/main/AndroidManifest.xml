@@ -11,7 +11,7 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <application>
-        <service android:name="io.luftaquila.hometty.platform.NotificationAccess" android:label="hometty notifications" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" android:exported="true">
+        <service android:name="io.luftaquila.hometty.platform.NotificationAccess" android:label="@string/notification_service_label" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" android:exported="true">
             <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
         </service>
     </application>

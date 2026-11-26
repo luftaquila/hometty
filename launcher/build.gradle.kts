@@ -9,12 +9,13 @@ android {
     namespace = "io.luftaquila.hometty"
     compileSdk = 37
     compileSdkMinor = 2
+    buildToolsVersion = "37.0.0"
     ndkVersion = "28.2.13676358"
     defaultConfig {
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         minSdk = 29
         applicationId = "io.luftaquila.hometty"
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 10
         versionName = "0.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -41,8 +42,13 @@ android {
         }
     }
     buildTypes {
-        debug { applicationIdSuffix = ".debug" }
+        // The debug build installs beside the release one; its name tells them apart.
+        debug {
+            applicationIdSuffix = ".debug"
+            manifestPlaceholders["appLabel"] = "hometty (debug)"
+        }
         release {
+            manifestPlaceholders["appLabel"] = "hometty"
             isMinifyEnabled = true
             isShrinkResources = true
             if (uploadStoreFile != null) signingConfig = signingConfigs.getByName("upload")

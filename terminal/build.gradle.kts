@@ -8,6 +8,7 @@ android {
     namespace = "io.luftaquila.hometty.terminal"
     compileSdk = 37
     compileSdkMinor = 2
+    buildToolsVersion = "37.0.0"
     defaultConfig { minSdk = 29 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
