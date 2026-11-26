@@ -700,6 +700,8 @@ private fun SettingDialog(
     val context = LocalContext.current
     var value by
         rememberSaveable(definition.key) { mutableStateOf(settings.string(definition.key)) }
+    // The text field's own state, with the cursor where placeholders go.
+    var input by rememberCursorText(definition.key, value)
     val validation =
         runCatching { definition.validate(value) }.exceptionOrNull()?.let(context::message)
     val slider = definition.step != null || definition.key in setOf(Settings.fontSize.key, Settings.opacity.key)
@@ -769,8 +771,11 @@ private fun SettingDialog(
                     }
                     else ->
                         OutlinedTextField(
-                            value,
-                            { value = it },
+                            input,
+                            {
+                                input = it
+                                value = it.text
+                            },
                             label = { Text(context.text(definition.title)) },
                             modifier = Modifier.fillMaxWidth(),
                             isError = validation != null,
@@ -788,6 +793,10 @@ private fun SettingDialog(
                         )
                 }
                 if (validation != null) Text(validation, color = MaterialTheme.colorScheme.error)
+                PlaceholderList(Placeholders.forSetting(definition.key)) {
+                    input = input.inserting(it)
+                    value = input.text
+                }
                 if (definition.category == "appearance" && validation == null)
                     TerminalPreview(
                         settings.copy(values = settings.values + (definition.key to value))

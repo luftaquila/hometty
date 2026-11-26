@@ -988,6 +988,41 @@ class LauncherIntegrationTest {
             ?: fail("bars after full screen: ${bars()}")
     }
 
+    @Test
+    fun formatEditorsListTheirPlaceholdersAndInsertThem() {
+        val model = model
+        // The format shows only while notifications are on.
+        runBlocking { storage.reset("notifications.enabled") }
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("apps")) }
+        compose.onNodeWithTag("settingsList").performScrollToNode(hasTestTag("setting:notifications.format"))
+        compose.onNodeWithTag("setting:notifications.format").performClick()
+        // The placeholders are in the editor, not in the description under the setting's name.
+        // The dialog's field: the settings search field sits behind it.
+        val field = compose.onAllNodes(hasSetTextAction()).onLast()
+        field.performTextReplacement("AB")
+        field.performTextInputSelection(androidx.compose.ui.text.TextRange(1))
+        // A placeholder goes in at the cursor, not at the end.
+        compose.onNodeWithTag("placeholder:{package}").performScrollTo().performClick()
+        field.assert(hasText("A{package}B"))
+        compose.onNodeWithText(context.getString(TextR.string.label_cancel)).performClick()
+        assertFalse(
+            runBlocking { storage.snapshot() }.string("notifications.format").contains("{package}")
+        )
+    }
+
+    @Test
+    fun recordEditorsInsertPlaceholdersAtTheCursor() {
+        val model = model
+        compose.runOnUiThread { model.navigate(Route.Manage("alias")) }
+        compose.onNodeWithText(context.getString(TextR.string.label_add)).performClick()
+        // The command field: the name field comes first.
+        val command = compose.onAllNodes(hasSetTextAction()).onLast()
+        command.performTextReplacement("echo  end")
+        command.performTextInputSelection(androidx.compose.ui.text.TextRange(5))
+        compose.onNodeWithTag("placeholder:\${1}").performScrollTo().performClick()
+        command.assert(hasText("echo \${1} end"))
+    }
+
     /**
      * Sends [times] taps 120 ms apart, or with [moveTo] a drag, to [terminal] at view coordinates;
      * [end] can make the gesture end in a cancel instead.

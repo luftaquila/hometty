@@ -452,9 +452,13 @@ private fun EntryDialog(
                                 )
                             }
                             else -> {
+                                var input by rememberCursorText(field.key, values[field.key].orEmpty())
                                 OutlinedTextField(
-                                    values[field.key].orEmpty(),
-                                    { update(field.key, it) },
+                                    input,
+                                    {
+                                        input = it
+                                        update(field.key, it.text)
+                                    },
                                     label = { Text(context.text(field.label)) },
                                     // A blank rule format uses the format setting.
                                     placeholder =
@@ -469,6 +473,13 @@ private fun EntryDialog(
                                             .padding(horizontal = 20.dp, vertical = 8.dp),
                                     shape = RoundedCornerShape(14.dp),
                                 )
+                                PlaceholderList(
+                                    Placeholders.forField(spec.kind, field.key),
+                                    Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                                ) {
+                                    input = input.inserting(it)
+                                    update(field.key, input.text)
+                                }
                             }
                         }
                     }
