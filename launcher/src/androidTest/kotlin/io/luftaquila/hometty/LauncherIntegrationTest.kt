@@ -1162,6 +1162,28 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun statusLinesShowAboveTheTerminalUntilCleared(): Unit = runBlocking {
+        homeTerminal()
+        storage.set("terminal.statusLines", "STAT {battery}\nT {time:HH:mm:ss}")
+        try {
+            compose.waitUntil(5000) { compose.onAllNodesWithTag("statusLines").fetchSemanticsNodes().isNotEmpty() }
+            val text =
+                compose.onNodeWithTag("statusLines").fetchSemanticsNode().config[
+                        androidx.compose.ui.semantics.SemanticsProperties.Text
+                    ]
+                    .joinToString("") { it.text }
+            assertTrue(text, Regex("STAT \\d+%\nT \\d\\d:\\d\\d:\\d\\d").matches(text))
+            // Above the terminal, not over it.
+            val status = compose.onNodeWithTag("statusLines").fetchSemanticsNode().boundsInRoot
+            val terminal = compose.onNodeWithTag("terminalSurface").fetchSemanticsNode().boundsInRoot
+            assertTrue("$status over $terminal", status.bottom <= terminal.top)
+        } finally {
+            storage.reset("terminal.statusLines")
+        }
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("statusLines").fetchSemanticsNodes().isEmpty() }
+    }
+
+    @Test
     fun theShellStartsWithNoSignalsBlocked(): Unit = runBlocking {
         val session = requireNotNull(homeTerminal().session)
         val result = File(context.filesDir, "home/sigblk").apply { delete() }

@@ -130,6 +130,23 @@ class EngineTest {
     }
 
     @Test
+    fun statusLinesFillTimesAndValuesLineByLine() {
+        val now = java.time.ZonedDateTime.of(2026, 11, 26, 9, 5, 7, 0, java.time.ZoneId.of("Asia/Seoul"))
+        assertEquals(emptyList<String>(), StatusLines.render(" ", emptyMap(), now, java.util.Locale.ROOT))
+        assertEquals(
+            listOf("2026-11-26 09:05 · 80% charging", "09:05:07 [bad pattern {time:qqqqqq}]"),
+            StatusLines.render(
+                "{date} {time} · {battery} {charging}\n{time:HH:mm:ss} [bad pattern {time:qqqqqq}]",
+                mapOf("battery" to "80%", "charging" to "charging"),
+                now,
+                java.util.Locale.ROOT,
+            ),
+        )
+        assertTrue(StatusLines.showsSeconds("{time:HH:mm:ss}"))
+        assertFalse(StatusLines.showsSeconds("{time} {date} {time:yyyy}"))
+    }
+
+    @Test
     fun allSettingDefaultsAreValidAndUnique() {
         assertEquals(Settings.all.size, Settings.byKey.size)
         Settings.all.forEach { it.validate(it.default) }

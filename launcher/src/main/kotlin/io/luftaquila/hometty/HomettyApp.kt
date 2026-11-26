@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import android.view.View
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.luftaquila.hometty.core.NotificationLines
 import io.luftaquila.hometty.core.SettingsSnapshot
 import io.luftaquila.hometty.core.Themes
 import io.luftaquila.hometty.resources.R as TextR
@@ -248,7 +249,26 @@ private fun HomeScreen(
     // While text is selected, Back ends selecting before it does anything else.
     var selecting by remember { mutableStateOf(false) }
     BackHandler(enabled = selecting && shown) { view?.endSelection() }
+    val status by model.statusLines.collectAsStateWithLifecycle()
+    val statusFont = remember(terminalFont) { FontFamily(terminalFont) }
     Column(Modifier.fillMaxSize()) {
+        // Like T-UI's status lines: fixed above the terminal, one row each, in its
+        // font and in the dimmer color notification times use. Hidden with the terminal, it keeps
+        // its room so the terminal grid does not change.
+        if (status.isNotEmpty())
+            Text(
+                status.joinToString("\n"),
+                Modifier.fillMaxWidth()
+                    .padding(start = 8.dp, top = 4.dp, end = 8.dp)
+                    .alpha(if (shown) 1f else 0f)
+                    .testTag("statusLines"),
+                color = Color(android.graphics.Color.parseColor(NotificationLines.timeColor(settings))),
+                fontFamily = statusFont,
+                fontSize = settings[Settings.fontSize].sp,
+                softWrap = false,
+                maxLines = status.size,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+            )
         AndroidView(
             factory = { context ->
                 TerminalView(context).also { v ->

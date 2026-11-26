@@ -91,7 +91,7 @@ val settingsSections =
                 SettingsGroup(
                     "output",
                     TextR.string.group_output,
-                    listOf(Settings.maxLines.key, Settings.clearOnLock.key),
+                    listOf(Settings.statusLines.key, Settings.maxLines.key, Settings.clearOnLock.key),
                 ),
                 SettingsGroup(
                     "shell",
@@ -799,6 +799,7 @@ private fun SettingDialog(
                                     setOf(
                                         Settings.notificationFormat.key,
                                         Settings.weatherFormat.key,
+                                        Settings.statusLines.key,
                                     ),
                             keyboardOptions =
                                 KeyboardOptions(
@@ -819,7 +820,8 @@ private fun SettingDialog(
                     )
                 if (
                     (definition.category in setOf("home", "terminal", "privacy") ||
-                        definition.key == Settings.inputColor.key)
+                        definition.key == Settings.inputColor.key) &&
+                        definition.key != Settings.statusLines.key
                 )
                     Text(
                         context.getString(TextR.string.settings_next_session),

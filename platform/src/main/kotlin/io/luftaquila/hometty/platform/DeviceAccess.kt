@@ -65,6 +65,10 @@ class DeviceAccess(private val context: Context) {
 
     fun launch(intent: Intent) = request(PlatformRequest.Launch(intent))
 
+    /** Whether every one of [names] is granted, without asking for any. */
+    fun granted(vararg names: String): Boolean =
+        names.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+
     fun permission(vararg names: String): Boolean {
         val missing =
             names.filter {
@@ -437,6 +441,9 @@ class DeviceAccess(private val context: Context) {
         )
     }
 
+    /** Whether the battery is charging. */
+    fun charging(): Boolean = context.getSystemService(BatteryManager::class.java).isCharging
+
     suspend fun location(): String =
         coordinates().let {
             "latitude: ${it.latitude}\nlongitude: ${it.longitude}\naccuracy: ±${it.accuracy.toInt()} m"
@@ -445,11 +452,14 @@ class DeviceAccess(private val context: Context) {
     /**
      * Where the device is, from the first update of a new request, waiting up to 5 seconds; with
      * none by then, the latest fix any provider has. With approximate location Android answers the
-     * request with its latest fix and makes a new one at most every 10 minutes.
+     * request with its latest fix and makes a new one at most every 10 minutes. [ask] false only
+     * checks the permission, for work the user did not start, so no permission dialog appears.
      */
-    suspend fun coordinates(): android.location.Location {
-        if (!permission(Manifest.permission.ACCESS_COARSE_LOCATION))
-            error(context.getString(TextR.string.message_grant_location_permission_then_retry))
+    suspend fun coordinates(ask: Boolean = true): android.location.Location {
+        val allowed =
+            if (ask) permission(Manifest.permission.ACCESS_COARSE_LOCATION)
+            else granted(Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (!allowed) error(context.getString(TextR.string.message_grant_location_permission_then_retry))
         val manager = context.getSystemService(LocationManager::class.java)
         // Not the passive provider: it never makes a fix of its own.
         val enabled = manager.getProviders(true)

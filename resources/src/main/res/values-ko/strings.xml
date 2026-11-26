@@ -313,6 +313,8 @@
   <string name="label_set_search_engine_desc">"search 명령이 쓰는 검색 엔진입니다."</string>
   <string name="label_set_max_lines">"스크롤백 줄 수"</string>
   <string name="label_set_max_lines_desc">"위로 스크롤해서 다시 볼 수 있는 줄 수입니다."</string>
+  <string name="label_set_status_lines">"상단 정보"</string>
+  <string name="label_set_status_lines_desc">"터미널 위에 고정해서 보여 줄 줄입니다. 비우면 꺼집니다."</string>
   <string name="label_set_clear_on_lock">"잠금 시 화면 지우기"</string>
   <string name="label_set_clear_on_lock_desc">"화면이 꺼질 때 빈 프롬프트면 터미널을 지웁니다."</string>
   <string name="label_set_root_enabled">"root 허용"</string>
@@ -433,6 +435,15 @@
   <string name="placeholder_text">"본문"</string>
   <string name="placeholder_link">"링크"</string>
   <string name="placeholder_date">"날짜"</string>
+  <string name="placeholder_time">"시각 (HH:mm)"</string>
+  <string name="placeholder_time_pattern">"원하는 형식의 시각"</string>
+  <string name="placeholder_battery">"배터리"</string>
+  <string name="placeholder_charging">"충전 중이면 \"충전 중\""</string>
+  <string name="placeholder_memory">"남은/전체 메모리"</string>
+  <string name="placeholder_storage">"남은/전체 저장공간"</string>
+  <string name="placeholder_network">"네트워크"</string>
+  <string name="placeholder_weather">"날씨 (날씨 형식대로)"</string>
+  <string name="status_charging">"충전 중"</string>
   <string name="placeholder_first_argument">"첫 번째 인수"</string>
   <string name="placeholder_second_argument">"두 번째 인수"</string>
   <string name="placeholder_all_arguments">"모든 인수"</string>

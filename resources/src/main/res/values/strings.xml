@@ -316,6 +316,8 @@
   <string name="label_set_search_engine_desc">"Used by the search command."</string>
   <string name="label_set_max_lines">"Scrollback lines"</string>
   <string name="label_set_max_lines_desc">"Lines you can scroll back to."</string>
+  <string name="label_set_status_lines">"Status lines"</string>
+  <string name="label_set_status_lines_desc">"Lines fixed above the terminal. Empty turns them off."</string>
   <string name="label_set_clear_on_lock">"Clear on lock"</string>
   <string name="label_set_clear_on_lock_desc">"Clears the terminal at an empty prompt when the screen turns off."</string>
   <string name="label_set_root_enabled">"Allow root"</string>
@@ -436,6 +438,15 @@
   <string name="placeholder_text">"Text"</string>
   <string name="placeholder_link">"Link"</string>
   <string name="placeholder_date">"Date"</string>
+  <string name="placeholder_time">"Time (HH:mm)"</string>
+  <string name="placeholder_time_pattern">"Time in your pattern"</string>
+  <string name="placeholder_battery">"Battery"</string>
+  <string name="placeholder_charging">"\"charging\" while charging"</string>
+  <string name="placeholder_memory">"Free/total memory"</string>
+  <string name="placeholder_storage">"Free/total storage"</string>
+  <string name="placeholder_network">"Network"</string>
+  <string name="placeholder_weather">"Weather, in its format"</string>
+  <string name="status_charging">"charging"</string>
   <string name="placeholder_first_argument">"First argument"</string>
   <string name="placeholder_second_argument">"Second argument"</string>
   <string name="placeholder_all_arguments">"All arguments"</string>

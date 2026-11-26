@@ -123,6 +123,8 @@ object TextResources {
             "label_set_units" to R.string.label_set_units,
             "label_set_units_desc" to R.string.label_set_units_desc,
             "label_set_weather_provider" to R.string.label_set_weather_provider,
+            "label_set_status_lines" to R.string.label_set_status_lines,
+            "label_set_status_lines_desc" to R.string.label_set_status_lines_desc,
             "label_set_weather_provider_desc" to R.string.label_set_weather_provider_desc,
             "label_set_history" to R.string.label_set_history,
             "label_set_history_desc" to R.string.label_set_history_desc,

@@ -34,6 +34,7 @@ constructor(
     private val terminals: TerminalHost,
     private val runtime: LauncherRuntime,
     private val notices: TerminalNotices,
+    private val network: NetworkData,
 ) : LauncherViewModel(context, banner) {
     val settings =
         storage.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SettingsSnapshot())
@@ -74,6 +75,82 @@ constructor(
                 }
         }
     }
+
+    // Status lines above the terminal
+
+    /** The last weather line (or why there is none) and when it was asked for; 0: never. */
+    private var weather = ""
+    private var weatherAt = 0L
+    private var weatherFailed = false
+    private var weatherJob: Job? = null
+
+    /** Asks for the weather again after 30 minutes, or 5 after a failure. */
+    private fun refreshWeather() {
+        val age = android.os.SystemClock.elapsedRealtime() - weatherAt
+        if (weatherJob?.isActive == true) return
+        if (weatherAt != 0L && age < (if (weatherFailed) 5 else 30) * 60_000L) return
+        weatherAt = android.os.SystemClock.elapsedRealtime()
+        weatherJob =
+            viewModelScope.launch {
+                try {
+                    // Not started by the user: no permission dialog every few minutes.
+                    val here = device.coordinates(ask = false)
+                    weather = network.weather(here.latitude, here.longitude, device.place(here))
+                    weatherFailed = false
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    weather = context.message(e)
+                    weatherFailed = true
+                }
+            }
+    }
+
+    private suspend fun statusValues(format: String, snapshot: SettingsSnapshot): Map<String, String> {
+        if ("{weather}" in format) refreshWeather()
+        // System services and the file system: off the main thread, which draws every second.
+        val (status, charging) = withContext(Dispatchers.Default) { device.status() to device.charging() }
+        return status + mapOf(
+            "charging" to if (charging) context.getString(TextR.string.status_charging) else "",
+            "device" to snapshot[Settings.deviceName],
+            "weather" to weather,
+        )
+    }
+
+    /**
+     * The status lines, drawn again every second when they show seconds, else every 10 seconds
+     * and on the minute; only while the screen collects them.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val statusLines: StateFlow<List<String>> =
+        settings
+            .map { it[Settings.statusLines] }
+            .distinctUntilChanged()
+            .flatMapLatest { format ->
+                if (format.isBlank()) flowOf(emptyList())
+                else
+                    flow {
+                        while (true) {
+                            val now = java.time.ZonedDateTime.now()
+                            // A value that cannot be read leaves the lines as they were rather
+                            // than ending them (or the app).
+                            val values =
+                                try {
+                                    statusValues(format, settings.value)
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    null
+                                }
+                            if (values != null)
+                                emit(StatusLines.render(format, values, now, java.util.Locale.getDefault()))
+                            val millis = System.currentTimeMillis()
+                            delay(
+                                if (StatusLines.showsSeconds(format)) 1000 - millis % 1000
+                                else minOf(10_000L, 60_000 - millis % 60_000)
+                            )
+                        }
+                    }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun showError(text: String) = banner.show(text)
 

@@ -180,6 +180,8 @@ object Settings {
             "google",
             listOf("duckduckgo", "google", "youtube"),
         )
+    /** Lines fixed above the terminal, with placeholders (see [StatusLines]); empty: none. */
+    val statusLines = text("terminal.statusLines", "label_set_status_lines", "")
     val maxLines =
         number("terminal.maxLines", "label_set_max_lines", 10000, 1000, 50000, step = 1000)
     val clearOnLock =

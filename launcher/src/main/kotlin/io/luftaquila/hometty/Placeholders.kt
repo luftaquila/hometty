@@ -52,6 +52,20 @@ object Placeholders {
             "{description}" to TextR.string.placeholder_conditions,
         )
 
+    private val status =
+        listOf(
+            "{time}" to TextR.string.placeholder_time,
+            "{time:HH:mm:ss}" to TextR.string.placeholder_time_pattern,
+            "{date}" to TextR.string.placeholder_date,
+            "{battery}" to TextR.string.placeholder_battery,
+            "{charging}" to TextR.string.placeholder_charging,
+            "{memory}" to TextR.string.placeholder_memory,
+            "{storage}" to TextR.string.placeholder_storage,
+            "{network}" to TextR.string.placeholder_network,
+            "{device}" to TextR.string.placeholder_device,
+            "{weather}" to TextR.string.placeholder_weather,
+        )
+
     private val feed =
         listOf(
             "{title}" to TextR.string.placeholder_title,
@@ -72,6 +86,7 @@ object Placeholders {
             Settings.notificationFormat.key -> notification
             Settings.prompt.key -> prompt
             Settings.weatherFormat.key -> weather
+            Settings.statusLines.key -> status
             else -> emptyList()
         }
 
