@@ -45,7 +45,8 @@ constructor(
                     out("Weather key saved")
                 } else {
                     val here = device.get().coordinates()
-                    out(network.get().weather(here.latitude, here.longitude))
+                    // The providers name the nearest village, not the city.
+                    out(network.get().weather(here.latitude, here.longitude, device.get().place(here)))
                 }
             },
             command(Commands.rss, gui = Route.Manage("rss")) { rss() },

@@ -46,6 +46,7 @@ object Placeholders {
     private val weather =
         listOf(
             "{city}" to TextR.string.placeholder_city,
+            "{district}" to TextR.string.placeholder_district,
             "{temp}" to TextR.string.placeholder_temperature,
             "{unit}" to TextR.string.placeholder_unit,
             "{description}" to TextR.string.placeholder_conditions,

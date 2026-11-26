@@ -425,6 +425,7 @@
   <string name="placeholder_device">"기기 이름"</string>
   <string name="placeholder_folder">"현재 폴더"</string>
   <string name="placeholder_city">"도시"</string>
+  <string name="placeholder_district">"구"</string>
   <string name="placeholder_temperature">"기온"</string>
   <string name="placeholder_unit">"단위"</string>
   <string name="placeholder_conditions">"날씨"</string>

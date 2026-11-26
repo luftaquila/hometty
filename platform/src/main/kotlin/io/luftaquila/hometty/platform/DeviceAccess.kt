@@ -24,6 +24,7 @@ import io.luftaquila.hometty.core.CliUsageException
 import io.luftaquila.hometty.data.Storage
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -507,4 +508,58 @@ class DeviceAccess(private val context: Context) {
                 }
             }
             .maxByOrNull { it.elapsedRealtimeNanos }
+
+    /**
+     * The city and district at [location], in the language Android's geocoder gives;
+     * null when it cannot tell within 5 seconds. Its nearest addresses do not all have every part,
+     * so each part comes from the first that has it.
+     */
+    suspend fun place(location: android.location.Location): Place? {
+        if (!android.location.Geocoder.isPresent()) return null
+        val geocoder = android.location.Geocoder(context)
+        val addresses =
+            kotlinx.coroutines.withTimeoutOrNull(5000) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    suspendCancellableCoroutine { continuation ->
+                        geocoder.getFromLocation(
+                            location.latitude,
+                            location.longitude,
+                            5,
+                            object : android.location.Geocoder.GeocodeListener {
+                                override fun onGeocode(addresses: MutableList<android.location.Address>) {
+                                    if (continuation.isActive) continuation.resume(addresses.toList())
+                                }
+
+                                override fun onError(errorMessage: String?) {
+                                    if (continuation.isActive) continuation.resume(emptyList())
+                                }
+                            },
+                        )
+                    }
+                else
+                    // A blocking call cannot be cancelled: run it apart and stop waiting at the
+                    // timeout instead (withContext would wait for it).
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+                        .async {
+                            try {
+                                @Suppress("DEPRECATION")
+                                geocoder.getFromLocation(location.latitude, location.longitude, 5).orEmpty()
+                            } catch (_: java.io.IOException) {
+                                emptyList()
+                            }
+                        }
+                        .await()
+            }
+        if (addresses.isNullOrEmpty()) return null
+        fun first(part: (android.location.Address) -> String?) =
+            addresses.firstNotNullOfOrNull { part(it)?.takeIf(String::isNotBlank) }.orEmpty()
+        return Place(
+            // A metropolitan city such as Daejeon or Seoul has no locality; it is the province-level area.
+            city = first { it.locality }.ifEmpty { first { it.adminArea } },
+            district = first { it.subLocality },
+        )
+    }
 }
+
+/** Names for where the device is; a part Android does not know is empty. */
+data class Place(val city: String, val district: String)

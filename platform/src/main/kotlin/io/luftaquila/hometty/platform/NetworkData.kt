@@ -179,9 +179,10 @@ class NetworkData(
     }
 
     /**
-     * The weather at [latitude], [longitude] from the chosen provider, in the weather format.
+     * The weather at [latitude], [longitude] from the chosen provider, in the weather format;
+     * [place] names where it is, the city falling back to the provider's name for it.
      */
-    suspend fun weather(latitude: Double, longitude: Double): String {
+    suspend fun weather(latitude: Double, longitude: Double, place: Place? = null): String {
         val settings = store.snapshot()
         val units = settings[Settings.units]
         val unit =
@@ -195,7 +196,8 @@ class NetworkData(
                 openWeather(latitude, longitude, units)
             else wttr(latitude, longitude, units)
         return settings[Settings.weatherFormat]
-            .replace("{city}", area)
+            .replace("{city}", place?.city?.ifEmpty { null } ?: area)
+            .replace("{district}", place?.district.orEmpty())
             .replace("{temp}", temperature)
             .replace("{unit}", unit)
             .replace("{description}", description)

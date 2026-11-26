@@ -428,6 +428,7 @@
   <string name="placeholder_device">"Device name"</string>
   <string name="placeholder_folder">"Current folder"</string>
   <string name="placeholder_city">"City"</string>
+  <string name="placeholder_district">"District"</string>
   <string name="placeholder_temperature">"Temperature"</string>
   <string name="placeholder_unit">"Unit"</string>
   <string name="placeholder_conditions">"Conditions"</string>
