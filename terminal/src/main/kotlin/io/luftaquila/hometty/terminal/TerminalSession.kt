@@ -478,6 +478,86 @@ class TerminalSession(
     /** The absolute line shown on the first view row when not scrolled back. */
     fun topRow(): Long = synchronized(monitor) { if (pointer == 0L) 0 else Native.position(pointer)[2] }
 
+    /**
+     * One code point per column of absolute line [row] (0 empty, -1 the right half of a wide
+     * character); null when it is no longer kept.
+     */
+    fun line(row: Long): IntArray? = synchronized(monitor) { if (pointer == 0L) null else Native.line(pointer, row) }
+
+    /**
+     * The text from absolute line [startRow], column [startColumn] through line [endRow], column
+     * [endColumn], both included: a line per row, without trailing blanks.
+     */
+    fun text(startRow: Long, startColumn: Int, endRow: Long, endColumn: Int): String =
+        synchronized(monitor) {
+            if (pointer == 0L) return ""
+            buildString {
+                for (row in startRow..endRow) {
+                    append(
+                        text(
+                                row,
+                                if (row == startRow) startColumn else 0,
+                                if (row == endRow) endColumn else Int.MAX_VALUE,
+                            )
+                            .orEmpty()
+                    )
+                    // A row filled to its last column went on in the next one: no line break
+                    // where the terminal wrapped it.
+                    if (row < endRow && Native.line(pointer, row)?.lastOrNull().let { it == null || it == 0 })
+                        append('\n')
+                }
+            }
+        }
+
+    /**
+     * How many characters the cursor of the line typed at the prompt must move (negative: left)
+     * to reach view row [viewRow], column [column] with the view scrolled back [scrollback] lines;
+     * past the typed text it goes to the end. Null when that cell is not on the typed line.
+     */
+    fun charactersTo(viewRow: Int, column: Int, scrollback: Int): Int? =
+        synchronized(monitor) {
+            if (pointer == 0L || _exit.value != null || !atPrompt.value) return null
+            val (startRow, startColumn) = inputStart ?: return null
+            val position = Native.position(pointer)
+            val top = position[2]
+            fun index(row: Long, column: Int) = (row - startRow) * cols + column
+            val cursor = index(top + position[0], position[1].toInt())
+            // Where each character starts, from the input start to the screen's end; the shell
+            // clears what follows the typed text, so its end is the last character that is not
+            // blank, or the cursor after typed spaces.
+            val starts = mutableListOf<Long>()
+            var end = cursor
+            for (row in startRow until top + rows) {
+                val cells = Native.line(pointer, row) ?: break
+                for (c in (if (row == startRow) startColumn else 0) until cells.size) {
+                    // -1: a wide character's right half; 0: an empty cell, such as the one left
+                    // at a row's end when a wide character wrapped to the next.
+                    if (cells[c] == -1 || cells[c] == 0) continue
+                    starts += index(row, c)
+                    if (cells[c] > 0 && cells[c] != ' '.code) end = maxOf(end, index(row, c) + 1)
+                }
+            }
+            val target = index(top - scrollback + viewRow, column.coerceIn(0, cols - 1))
+            // The prompt before the input, and rows below the typed text, are not on the line.
+            if (target < 0 || target / cols > (end - 1).coerceAtLeast(0) / cols) return null
+            fun characters(before: Long) = starts.count { it < before }
+            characters(minOf(target, end)) - characters(cursor)
+        }
+
+    /** Moves the cursor of the typed line [characters] to the right (negative: left). */
+    fun moveCursor(characters: Int) {
+        if (characters == 0) return
+        synchronized(monitor) {
+            if (pointer == 0L || _exit.value != null) return
+            inputPending.value = true
+            val key = Native.key(pointer, if (characters > 0) 8 else 7, 0)
+            // One write: a key per character could overflow the input queue.
+            val keys = ByteArray(key.size * kotlin.math.abs(characters))
+            for (i in 0 until kotlin.math.abs(characters)) key.copyInto(keys, i * key.size)
+            writes.trySend(keys)
+        }
+    }
+
     private var palette = IntArray(0)
 
     /** Sets the 16 ANSI colors (opaque RGB); existing output is drawn with them too. */

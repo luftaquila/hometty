@@ -245,6 +245,9 @@ private fun HomeScreen(
     @OptIn(ExperimentalLayoutApi::class)
     val keyboardVisible =
         WindowInsets.imeAnimationTarget.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
+    // While text is selected, Back ends selecting before it does anything else.
+    var selecting by remember { mutableStateOf(false) }
+    BackHandler(enabled = selecting && shown) { view?.endSelection() }
     Column(Modifier.fillMaxSize()) {
         AndroidView(
             factory = { context ->
@@ -252,6 +255,8 @@ private fun HomeScreen(
                     v.session = terminal
                     // Like T-UI: tap an entered command to run it again.
                     v.onCommandTap = { command -> model.submit(command) }
+                    v.onCopy = { text -> model.device.copy(text) }
+                    v.onSelectionChanged = { selecting = it }
                     v.setOnCreateContextMenuListener { menu, _, _ ->
                         v.pressedNotice?.let { id ->
                             menu
@@ -283,6 +288,12 @@ private fun HomeScreen(
                                     true
                                 }
                         }
+                        menu
+                            .add(textContext.getString(TextR.string.label_select_text))
+                            .setOnMenuItemClickListener {
+                                v.startSelection()
+                                true
+                            }
                         menu
                             .add(textContext.getString(TextR.string.label_copy_screen))
                             .setOnMenuItemClickListener {

@@ -1054,15 +1054,112 @@ class LauncherIntegrationTest {
      * Sends [times] taps 120 ms apart, or with [moveTo] a drag, to [terminal] at view coordinates;
      * [end] can make the gesture end in a cancel instead.
      */
-    private fun touch(terminal: io.luftaquila.hometty.terminal.TerminalView, x: Float, y: Float) =
+    private fun touch(
+        terminal: io.luftaquila.hometty.terminal.TerminalView,
+        x: Float,
+        y: Float,
+        moveTo: Pair<Float, Float>? = null,
+        end: Int = android.view.MotionEvent.ACTION_UP,
+        times: Int = 1,
+    ) =
         compose.runOnUiThread {
-            val down = android.os.SystemClock.uptimeMillis()
-            listOf(android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_UP).forEachIndexed { i, action ->
-                val event = android.view.MotionEvent.obtain(down, down + i * 20L, action, x, y, 0)
-                terminal.dispatchTouchEvent(event)
-                event.recycle()
+            var down = android.os.SystemClock.uptimeMillis()
+            repeat(times) {
+                val steps =
+                    listOf(Triple(android.view.MotionEvent.ACTION_DOWN, x, y)) +
+                        (moveTo?.let { (toX, toY) ->
+                            (1..5).map { i ->
+                                Triple(
+                                    android.view.MotionEvent.ACTION_MOVE,
+                                    x + (toX - x) * i / 5,
+                                    y + (toY - y) * i / 5,
+                                )
+                            }
+                        } ?: emptyList()) +
+                        Triple(end, moveTo?.first ?: x, moveTo?.second ?: y)
+                steps.forEachIndexed { i, (action, atX, atY) ->
+                    val event = android.view.MotionEvent.obtain(down, down + i * 20L, action, atX, atY, 0)
+                    terminal.dispatchTouchEvent(event)
+                    event.recycle()
+                }
+                down += 120
             }
         }
+
+    @Test
+    fun aTapOnTheTypedLineMovesItsCursorThere(): Unit = runBlocking {
+        val terminal = homeTerminal()
+        val session = requireNotNull(terminal.session)
+        val result = File(context.filesDir, "home/ct").apply { delete() }
+        // A short line: it must not wrap.
+        session.write("cd \"\$HOMETTY_DATA\"\n")
+        withTimeout(5000) { session.atPrompt.first { it } }
+        session.write("echo bc > ct")
+        waitFor("the typed line", session) { visibleText(session).lines().any { "echo bc > ct" in it } }
+        val row = visibleText(session).lines().indexOfLast { "echo bc > ct" in it }
+        val column = visibleText(session).lines()[row].indexOf("echo bc") + "echo ".length
+        // On "b": the cursor moves back before it, so typing puts "a" there. The arrow keys and
+        // the typing reach the shell in order.
+        touch(terminal, (column + .5f) * terminal.charWidth, (row + .5f) * terminal.lineHeight)
+        session.write("a\n")
+        waitFor("abc in ${result.name}", session) { result.exists() && result.readText().trim() == "abc" }
+        result.delete()
+    }
+
+    @Test
+    fun aLongPressSelectionCopiesTheChosenRange(): Unit = runBlocking {
+        val terminal = homeTerminal()
+        val session = requireNotNull(terminal.session)
+        session.write("echo 'SELECTME-one two three'\n")
+        waitFor("the output line", session) {
+            visibleText(session).lines().any { it.trimStart().startsWith("SELECTME") }
+        }
+        val row = visibleText(session).lines().indexOfLast { it.trimStart().startsWith("SELECTME") }
+        val line = visibleText(session).lines()[row]
+        val column = line.indexOf("SELECTME")
+        val y = (row + .5f) * terminal.lineHeight
+        // Where the menu's Select starts: the press before the long press opens the menu.
+        touch(terminal, (column + .5f) * terminal.charWidth, y, end = android.view.MotionEvent.ACTION_CANCEL)
+        compose.runOnUiThread { terminal.startSelection() }
+        compose.waitForIdle()
+        // The word is selected; its end handle hangs under the end of "SELECTME-one".
+        val radius = 10 * context.resources.displayMetrics.density
+        val handleY = (row + 1) * terminal.lineHeight + radius
+        val wordEnd = (column + "SELECTME-one".length) * terminal.charWidth
+        val twoEnd = (column + "SELECTME-one two".length) * terminal.charWidth
+        touch(terminal, wordEnd, handleY, moveTo = twoEnd to handleY)
+        compose.waitForIdle()
+        val automation = automation
+        automation.serviceInfo =
+            automation.serviceInfo.apply {
+                flags = flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            }
+        val copy = context.getString(android.R.string.copy)
+        // Searching by text does not reach into the floating toolbar's own surface; walking does.
+        fun button() = automation.windows.firstNotNullOfOrNull { window -> findNode(window.root) { it.text?.toString() == copy } }
+        waitFor("$copy in ${automation.windows.map { it.title }}") { button() != null }
+        // The toolbar is drawn in a surface of its own: tap where it shows.
+        val bounds = android.graphics.Rect().also(requireNotNull(button())::getBoundsInScreen)
+        shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
+        val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+        fun clip() = compose.runOnUiThread { clipboard.primaryClip?.getItemAt(0)?.text?.toString() }
+        waitFor("the copied range") { clip() == "SELECTME-one two" }
+    }
+
+    @Test
+    fun lineLimitsMoveInStepsOfAThousand() {
+        val model = model
+        runBlocking { storage.reset("terminal.maxLines") }
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("terminal")) }
+        compose.onNodeWithTag("settingsList").performScrollToNode(hasTestTag("setting:terminal.maxLines"))
+        compose.onNodeWithTag("setting:terminal.maxLines").performClick()
+        // In the dialog and in the row behind it.
+        compose.onAllNodesWithText(context.getString(TextR.string.settings_lines, 10000)).onFirst().assertExists()
+        compose.onNodeWithTag("sliderIncrease").performClick()
+        compose.onNodeWithText(context.getString(TextR.string.settings_lines, 11000)).assertExists()
+        compose.onNodeWithText(context.getString(TextR.string.label_save)).performClick()
+        compose.waitUntil(5000) { runBlocking { storage.snapshot() }.string("terminal.maxLines") == "11000" }
+    }
 
     @Test
     fun theShellStartsWithNoSignalsBlocked(): Unit = runBlocking {

@@ -26,10 +26,13 @@ class TerminalView(context: Context) : View(context) {
             field = value
             scrollback = 0
             lastTop = -1
+            selectionMode?.finish()
             // A new shell starts once it knows its size, which this view may already have.
             removeCallbacks(resizeGrid)
             post(resizeGrid)
         }
+    /** Told whether text is selected, so Back can end the selection first. */
+    var onSelectionChanged: (Boolean) -> Unit = {}
     var controlLatch = false
     var altLatch = false
     var onModifiersConsumed: () -> Unit = {}
@@ -46,6 +49,8 @@ class TerminalView(context: Context) : View(context) {
     /** The id of the notice under the last long press, for the context menu; null elsewhere. */
     var pressedNotice: Long? = null
         private set
+    /** Copies text chosen with [startSelection]. */
+    var onCopy: (String) -> Unit = {}
     var cursorColor = android.graphics.Color.WHITE
     var foregroundColor = android.graphics.Color.WHITE
     var inputColor = 0xFF00FF00.toInt()
@@ -54,7 +59,11 @@ class TerminalView(context: Context) : View(context) {
     val composingText: String
         get() = inputConnection.pendingText
 
+    /** The absolute line under the last long press, which Select starts on; -1: none. */
+    private var pressedRow = -1L
+
     private val longPress = Runnable {
+        pressedRow = session?.let { firstShownRow(it) + floor(downY / lineHeight).toLong() } ?: -1L
         dragged = true
         pressedCommand = commandUnder(downY)
         pressedNotice = noticeUnder(downY)
@@ -86,6 +95,7 @@ class TerminalView(context: Context) : View(context) {
             session?.resize(floor(height / lineHeight).toInt(), floor(width / charWidth).toInt())
     }
     private var touchY = 0f
+    private var downX = 0f
     private var downY = 0f
     private var dragged = false
     // Scrolling follows the finger with sub-line remainders and keeps going after a fling.
@@ -220,6 +230,155 @@ class TerminalView(context: Context) : View(context) {
                 paint,
             )
         }
+        drawSelection(canvas)
+    }
+
+    // Selecting text to copy: cells of absolute lines, so a selection stays on its text while the
+    // view scrolls or output arrives.
+
+    private data class Cell(val row: Long, val column: Int) : Comparable<Cell> {
+        override fun compareTo(other: Cell) = compareValuesBy(this, other, Cell::row, Cell::column)
+    }
+
+    /** First and last selected cells, both included; null: nothing selected. */
+    private var selection: Pair<Cell, Cell>? = null
+    private var selectionMode: android.view.ActionMode? = null
+    /** The handle being dragged: 1 the start, 2 the end, 0 none. */
+    private var handle = 0
+    // From the finger to the cell the dragged handle points at.
+    private var handleOffsetX = 0f
+    private var handleOffsetY = 0f
+    private val handleRadius
+        get() = 10 * resources.displayMetrics.density
+
+    /** The absolute line on the first view row. */
+    private fun firstShownRow(session: TerminalSession) = session.topRow() - scrollback
+
+    /** Where handle [which] is drawn: under the start of the first cell or the end of the last. */
+    private fun handleCenter(session: TerminalSession, which: Int): Pair<Float, Float>? {
+        val (start, end) = selection ?: return null
+        val cell = if (which == 1) start else end
+        val x = (cell.column + if (which == 1) 0 else 1) * charWidth
+        return x to (cell.row - firstShownRow(session) + 1) * lineHeight + handleRadius
+    }
+
+    /**
+     * Selects the word under the last long press, or the line's text when that is blank, with
+     * handles to change the selection and a floating Copy action.
+     */
+    fun startSelection() {
+        val session = session ?: return
+        // The pressed line, even if output moved it while the menu was open.
+        val row = pressedRow.takeIf { it >= 0 } ?: (firstShownRow(session) + floor(downY / lineHeight).toLong())
+        val cells = session.line(row) ?: return
+        fun blank(c: Int) = cells[c] == 0 || cells[c] == ' '.code
+        var start = floor(downX / charWidth).toInt().coerceIn(0, cells.size - 1)
+        if (cells[start] == -1 && start > 0) start--
+        var end = start
+        if (blank(start)) {
+            start = cells.indices.firstOrNull { !blank(it) } ?: return
+            end = cells.indices.last { !blank(it) }
+        } else {
+            while (start > 0 && !blank(start - 1)) start--
+            while (end < cells.size - 1 && !blank(end + 1)) end++
+        }
+        // Ending an earlier selection clears it, so that comes first.
+        selectionMode?.finish()
+        selection = Cell(row, start) to Cell(row, end)
+        selectionMode = startActionMode(selectionActions, android.view.ActionMode.TYPE_FLOATING)
+        if (selectionMode == null) selection = null
+        onSelectionChanged(selection != null)
+        invalidate()
+    }
+
+    private val selectionActions =
+        object : android.view.ActionMode.Callback2() {
+            override fun onCreateActionMode(mode: android.view.ActionMode, menu: android.view.Menu): Boolean {
+                menu
+                    .add(android.view.Menu.NONE, android.R.id.copy, android.view.Menu.NONE, android.R.string.copy)
+                    .setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM)
+                return true
+            }
+
+            override fun onPrepareActionMode(mode: android.view.ActionMode, menu: android.view.Menu) = false
+
+            override fun onActionItemClicked(mode: android.view.ActionMode, item: android.view.MenuItem): Boolean {
+                if (item.itemId != android.R.id.copy) return false
+                val session = session
+                val (start, end) = selection ?: return false
+                if (session != null) onCopy(session.text(start.row, start.column, end.row, end.column))
+                mode.finish()
+                return true
+            }
+
+            override fun onDestroyActionMode(mode: android.view.ActionMode) {
+                selectionMode = null
+                selection = null
+                handle = 0
+                onSelectionChanged(false)
+                invalidate()
+            }
+
+            override fun onGetContentRect(mode: android.view.ActionMode, view: View, outRect: android.graphics.Rect) {
+                val session = session
+                val (start, end) = selection ?: return super.onGetContentRect(mode, view, outRect)
+                if (session == null) return super.onGetContentRect(mode, view, outRect)
+                val first = firstShownRow(session)
+                val top = ((start.row - first) * lineHeight).coerceIn(0f, height.toFloat())
+                val bottom = ((end.row - first + 1) * lineHeight).coerceIn(0f, height.toFloat())
+                outRect.set(0, top.toInt(), width, bottom.toInt())
+            }
+        }
+
+    private fun drawSelection(canvas: Canvas) {
+        val session = session ?: return
+        val (start, end) = selection ?: return
+        val first = firstShownRow(session)
+        paint.color = (cursorColor and 0x00FFFFFF) or 0x66000000
+        for (row in maxOf(start.row, first)..minOf(end.row, first + session.rows - 1)) {
+            val y = (row - first) * lineHeight
+            val from = if (row == start.row) start.column else 0
+            val to = if (row == end.row) end.column else session.cols - 1
+            canvas.drawRect(from * charWidth, y, (to + 1) * charWidth, y + lineHeight, paint)
+        }
+        paint.color = cursorColor
+        for (which in 1..2) handleCenter(session, which)?.let { (x, y) ->
+            canvas.drawCircle(x, y, handleRadius, paint)
+        }
+    }
+
+    /** The handle within reach of [x], [y], nearest first; 0 when none. */
+    private fun handleAt(x: Float, y: Float): Int {
+        val session = session ?: return 0
+        return (1..2)
+            .mapNotNull { which ->
+                handleCenter(session, which)?.let { (cx, cy) -> which to kotlin.math.hypot(x - cx, y - cy) }
+            }
+            .filter { it.second <= handleRadius * 3 }
+            .minByOrNull { it.second }
+            ?.first ?: 0
+    }
+
+    /** Moves the dragged handle to the cell under [x], [y], scrolling at the view's edges. */
+    private fun dragHandle(x: Float, y: Float) {
+        val session = session ?: return
+        val (start, end) = selection ?: return
+        if (y < lineHeight) scrollByPixels(lineHeight / 2)
+        else if (y > height - lineHeight) scrollByPixels(-lineHeight / 2)
+        val top = session.topRow()
+        val row =
+            (firstShownRow(session) + floor((y + handleOffsetY) / lineHeight).toLong())
+                .coerceIn(top - session.historySize(), top + session.rows - 1)
+        val edge = kotlin.math.round((x + handleOffsetX) / charWidth).toInt()
+        val cell = Cell(row, (if (handle == 1) edge else edge - 1).coerceIn(0, session.cols - 1))
+        selection =
+            if (handle == 1) {
+                if (cell <= end) cell to end else end to cell.also { handle = 2 }
+            } else {
+                if (cell >= start) start to cell else cell to start.also { handle = 1 }
+            }
+        selectionMode?.invalidateContentRect()
+        invalidate()
     }
 
     /** The absolute line on the first row when last drawn; -1: none yet. */
@@ -232,11 +391,24 @@ class TerminalView(context: Context) : View(context) {
         if (scrollback > 0 && lastTop >= 0 && top > lastTop) scrollback += (top - lastTop).toInt()
         lastTop = top
         scrollback = scrollback.coerceAtMost(session?.historySize() ?: 0)
+        selectionMode?.invalidateContentRect()
         invalidate()
+    }
+
+    /** Ends selecting text; false when nothing was selected. */
+    fun endSelection(): Boolean {
+        val mode = selectionMode ?: return false
+        mode.finish()
+        return true
     }
 
     /** Sends unfinished IME text and starts the IME afresh, before the line changes elsewhere. */
     fun finishInput() = inputConnection.finishForTerminalKey()
+
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        if (!isShown) selectionMode?.finish()
+    }
 
     override fun onCheckIsTextEditor() = true
 
@@ -516,6 +688,7 @@ class TerminalView(context: Context) : View(context) {
         val moved = target != scrollback
         scrollback = target
         if (!moved) scrollRemainder = 0f
+        if (moved) selectionMode?.invalidateContentRect()
         invalidate()
         return moved
     }
@@ -534,6 +707,21 @@ class TerminalView(context: Context) : View(context) {
 
     private fun noticeUnder(y: Float): Long? =
         session?.noticeAt(floor(y / lineHeight).toInt(), scrollback)
+
+    /**
+     * A tap at [x], [y] on the line being typed moves its cursor there; false elsewhere. Unfinished
+     * IME text goes in at the cursor first, leaving the cursor after it.
+     */
+    private fun moveCursorTo(x: Float, y: Float): Boolean {
+        val session = session ?: return false
+        var characters =
+            session.charactersTo(floor(y / lineHeight).toInt(), floor(x / charWidth).toInt(), scrollback)
+                ?: return false
+        if (characters < 0) characters -= composingText.codePointCount(0, composingText.length)
+        inputConnection.finishForTerminalKey()
+        session.moveCursor(characters)
+        return true
+    }
 
     /** What a tap at [y] does: open the notice there or run the command there again. */
     private fun tapAction(y: Float): (() -> Unit)? {
@@ -555,11 +743,24 @@ class TerminalView(context: Context) : View(context) {
                 velocity?.recycle()
                 velocity = android.view.VelocityTracker.obtain().also { it.addMovement(event) }
                 touchY = event.y
+                downX = event.x
                 downY = event.y
+                pressedRow = -1L
                 scrollRemainder = 0f
                 dragged = false
                 pressedCommand = null
                 pressedNotice = null
+                // While text is selected, a press drags a handle or scrolls; it opens no menu.
+                if (selection != null) {
+                    handle = handleAt(event.x, event.y)
+                    session?.let { session ->
+                        handleCenter(session, handle)?.let { (cx, cy) ->
+                            handleOffsetX = cx - event.x
+                            handleOffsetY = cy - handleRadius - lineHeight / 2 - event.y
+                        }
+                    }
+                    return true
+                }
                 postDelayed(
                     longPress,
                     android.view.ViewConfiguration.getLongPressTimeout().toLong(),
@@ -567,6 +768,10 @@ class TerminalView(context: Context) : View(context) {
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                if (handle != 0) {
+                    dragHandle(event.x, event.y)
+                    return true
+                }
                 if (!dragged && kotlin.math.abs(event.y - downY) > touchSlop) {
                     removeCallbacks(longPress)
                     dragged = true
@@ -579,6 +784,7 @@ class TerminalView(context: Context) : View(context) {
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
+                handle = 0
                 removeCallbacks(longPress)
                 velocity?.recycle()
                 velocity = null
@@ -586,6 +792,12 @@ class TerminalView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_UP -> {
                 removeCallbacks(longPress)
+                if (handle != 0) {
+                    handle = 0
+                    velocity?.recycle()
+                    velocity = null
+                    return true
+                }
                 val tracker = velocity
                 if (dragged && tracker != null) {
                     tracker.computeCurrentVelocity(1000, maxFling.toFloat())
@@ -596,9 +808,16 @@ class TerminalView(context: Context) : View(context) {
                         postInvalidateOnAnimation()
                     }
                 }
-                if (!dragged) {
+                if (!dragged && selection != null) {
+                    // A tap away from the handles ends selecting.
+                    selectionMode?.finish()
+                } else if (!dragged) {
                     val action = tapAction(event.y)
-                    if (action == null) performClick() else action()
+                    when {
+                        moveCursorTo(event.x, event.y) -> performClick()
+                        action == null -> performClick()
+                        else -> action()
+                    }
                 }
                 velocity?.recycle()
                 velocity = null
@@ -609,6 +828,7 @@ class TerminalView(context: Context) : View(context) {
     }
 
     override fun onDetachedFromWindow() {
+        selectionMode?.finish()
         removeCallbacks(longPress)
         removeCallbacks(resizeGrid)
         super.onDetachedFromWindow()

@@ -60,6 +60,7 @@
   <string name="label_contacts">"Contacts"</string>
   <string name="label_copy">"Copy"</string>
   <string name="label_copy_screen">"Copy screen"</string>
+  <string name="label_select_text">"Select"</string>
   <string name="label_date_selector">"Date selector"</string>
   <string name="label_delete">"Delete"</string>
   <string name="label_deletes_settings_notes_aliases_rules_history_and_api_keys_shell_h">"Deletes settings, notes, aliases, rules, history and API keys. Shell home files and Android permissions remain."</string>
