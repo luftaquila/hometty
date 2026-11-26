@@ -15,8 +15,8 @@ android {
         minSdk = 29
         applicationId = "io.luftaquila.hometty"
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.4.0"
+        versionCode = 10
+        versionName = "0.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
