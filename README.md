@@ -7,7 +7,7 @@ Inspired by [T-UI](https://github.com/fandreuz/TUI-ConsoleLauncher).
 - Open apps by name or package name, with tab completion
 - Notifications show up in the terminal
 - Runs BusyBox ash that supports pipes, redirection, history and even `vi`
-- Notes and RSS feeds
+- Notes, RSS feeds and weather
 
 ## Usage
 
@@ -20,6 +20,7 @@ apps -al
 chrome
 alias work='apps launch ${1}'
 calc 2 * 3
+weather
 ```
 
 ## Building

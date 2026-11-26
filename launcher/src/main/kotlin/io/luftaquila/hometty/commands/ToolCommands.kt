@@ -5,6 +5,7 @@ import io.luftaquila.hometty.core.Commands
 import io.luftaquila.hometty.core.EntryStore
 import io.luftaquila.hometty.core.StateNames
 import io.luftaquila.hometty.core.StateStore
+import io.luftaquila.hometty.data.Secrets
 import io.luftaquila.hometty.platform.DeviceAccess
 import io.luftaquila.hometty.platform.MusicAccess
 import io.luftaquila.hometty.platform.NetworkData
@@ -13,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Provider
 import io.luftaquila.hometty.core.get
 
-/** `help` section Tools: notes, calc, music, rss. */
+/** `help` section Tools: notes, calc, music, weather, rss. */
 class ToolCommands
 @Inject
 constructor(
@@ -22,6 +23,7 @@ constructor(
     private val device: Provider<DeviceAccess>,
     private val network: Provider<NetworkData>,
     private val music: Provider<MusicAccess>,
+    private val secrets: Provider<Secrets>,
 ) : CommandGroup {
     override val commands =
         listOf(
@@ -37,6 +39,15 @@ constructor(
                 )
             },
             command(Commands.music) { out(music.get().control(action)) },
+            command(Commands.weather, gui = Route.SettingsPage("weather")) {
+                if (action == "key") {
+                    secrets.get().set("weatherKey", operand())
+                    out("Weather key saved")
+                } else {
+                    val here = device.get().coordinates()
+                    out(network.get().weather(here.latitude, here.longitude))
+                }
+            },
             command(Commands.rss, gui = Route.Manage("rss")) { rss() },
         )
 

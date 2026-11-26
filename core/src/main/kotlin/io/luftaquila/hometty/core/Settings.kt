@@ -66,6 +66,7 @@ object Settings {
             "notifications",
             "notes",
             "rss",
+            "weather",
             "privacy",
         )
 
@@ -154,6 +155,8 @@ object Settings {
         )
     val showHints =
         bool("input.showHints", "label_set_show_hints", true)
+    val weatherFormat =
+        text("weather.format", "label_set_weather_format", "{city} · {temp}{unit} · {description}")
     val username =
         text("home.username", "label_set_username", "user")
     val deviceName =
@@ -202,6 +205,11 @@ object Settings {
         bool("rss.enabled", "label_set_rss_enabled", false)
     val rssShowUpdates =
         bool("rss.showUpdates", "label_set_rss_show_updates", true)
+    /** wttr.in needs no account; OpenWeather needs an API key. */
+    val weatherProvider =
+        choice("weather.provider", "label_set_weather_provider", "wttr", listOf("wttr", "openweather"))
+    val units =
+        choice("weather.units", "label_set_units", "metric", listOf("metric", "imperial", "standard"))
     val historyEnabled =
         bool("privacy.history", "label_set_history", true)
     val historyLimit =

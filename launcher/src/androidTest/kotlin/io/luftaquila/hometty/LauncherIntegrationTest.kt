@@ -1023,6 +1023,33 @@ class LauncherIntegrationTest {
         command.assert(hasText("echo \${1} end"))
     }
 
+    @Test
+    fun choosingOpenWeatherAsksForItsKeyInTheSameDialog() {
+        val secrets = io.luftaquila.hometty.data.Secrets(context)
+        val saved = runCatching { secrets.get("weatherKey") }.getOrNull()
+        secrets.set("weatherKey", "")
+        val model = model
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("tools")) }
+        try {
+            compose.onNodeWithTag("settingsList").performScrollToNode(hasTestTag("setting:weather.provider"))
+            compose.onNodeWithTag("setting:weather.provider").performClick()
+            // wttr.in needs no key, so there is nothing to type until OpenWeather is picked.
+            compose.onNodeWithTag("weatherKey").assertDoesNotExist()
+            compose.onNodeWithTag("weatherProvider:openweather").performClick()
+            val save = compose.onNodeWithText(context.getString(TextR.string.label_save))
+            save.assertIsNotEnabled()
+            compose.onNodeWithTag("openWeatherSite").assertExists()
+            compose.onNodeWithTag("weatherKey").performTextInput("TESTKEY")
+            save.assertIsEnabled().performClick()
+            compose.waitUntil(5000) {
+                runBlocking { storage.snapshot() }.string("weather.provider") == "openweather"
+            }
+            assertEquals("TESTKEY", secrets.get("weatherKey"))
+        } finally {
+            secrets.set("weatherKey", saved.orEmpty())
+        }
+    }
+
     /**
      * Sends [times] taps 120 ms apart, or with [moveTo] a drag, to [terminal] at view coordinates;
      * [end] can make the gesture end in a cancel instead.

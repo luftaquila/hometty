@@ -5,8 +5,10 @@ import androidx.work.*
 import io.luftaquila.hometty.core.Entry
 import io.luftaquila.hometty.core.Patterns
 import io.luftaquila.hometty.core.StateNames
+import io.luftaquila.hometty.data.Secrets
 import io.luftaquila.hometty.core.SettingsStore
 import io.luftaquila.hometty.core.StateStore
+import io.luftaquila.hometty.core.UserMessage
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -19,15 +21,17 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.*
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.get
 
-/** Feeds over HTTPS; feed results are cached in [state]. */
+/** Feeds and weather over HTTPS; feed results are cached in [state]. */
 class NetworkData(
     private val store: SettingsStore,
     private val state: StateStore,
+    private val secrets: Secrets,
 ) {
     /** A feed item seen for the first time, rendered with its feed's format. */
     data class FeedItem(val feed: String, val text: String)
@@ -172,6 +176,79 @@ class NetworkData(
         // Feeds list the newest first; they print oldest first.
         if (shown != null && announce) fresh.asReversed().forEach { _newItems.tryEmit(FeedItem(entry.name, it)) }
         return text
+    }
+
+    /**
+     * The weather at [latitude], [longitude] from the chosen provider, in the weather format.
+     */
+    suspend fun weather(latitude: Double, longitude: Double): String {
+        val settings = store.snapshot()
+        val units = settings[Settings.units]
+        val unit =
+            when (units) {
+                "metric" -> "°C"
+                "imperial" -> "°F"
+                else -> "K"
+            }
+        val (area, temperature, description) =
+            if (settings[Settings.weatherProvider] == "openweather")
+                openWeather(latitude, longitude, units)
+            else wttr(latitude, longitude, units)
+        return settings[Settings.weatherFormat]
+            .replace("{city}", area)
+            .replace("{temp}", temperature)
+            .replace("{unit}", unit)
+            .replace("{description}", description)
+    }
+
+    /** City, temperature and conditions from wttr.in, which needs no key. */
+    private suspend fun wttr(latitude: Double, longitude: Double, units: String): Triple<String, String, String> {
+        val url =
+            HttpUrl.Builder()
+                .scheme("https")
+                .host("wttr.in")
+                .addPathSegment("$latitude,$longitude")
+                .addQueryParameter("format", "j1")
+                .build()
+        val data = JSONObject(fetch(url.toString()))
+        val now = data.getJSONArray("current_condition").getJSONObject(0)
+        val celsius = now.getString("temp_C").toDouble()
+        val temperature =
+            when (units) {
+                "imperial" -> now.getString("temp_F")
+                "standard" -> "%.1f".format(java.util.Locale.ROOT, celsius + 273.15)
+                else -> now.getString("temp_C")
+            }
+        val city =
+            data.optJSONArray("nearest_area")?.optJSONObject(0)?.optJSONArray("areaName")
+                ?.optJSONObject(0)?.optString("value").orEmpty()
+        val description = now.getJSONArray("weatherDesc").getJSONObject(0).getString("value")
+        return Triple(city, temperature, description)
+    }
+
+    /** City, temperature and conditions from OpenWeather, with the saved API key. */
+    private suspend fun openWeather(latitude: Double, longitude: Double, units: String): Triple<String, String, String> {
+        val key =
+            secrets.get("weatherKey")?.takeIf { it.isNotBlank() }
+                ?: throw UserMessage("message_set_weather_key")
+        val lat = latitude.toString()
+        val lon = longitude.toString()
+        val url =
+            HttpUrl.Builder()
+                .scheme("https")
+                .host("api.openweathermap.org")
+                .addPathSegments("data/2.5/weather")
+                .addQueryParameter("lat", lat)
+                .addQueryParameter("lon", lon)
+                .addQueryParameter("appid", key)
+                .addQueryParameter("units", units)
+                .build()
+        val data = JSONObject(fetch(url.toString()))
+        return Triple(
+            data.optString("name"),
+            data.getJSONObject("main").getDouble("temp").toString(),
+            data.getJSONArray("weather").getJSONObject(0).getString("description"),
+        )
     }
 
     companion object {

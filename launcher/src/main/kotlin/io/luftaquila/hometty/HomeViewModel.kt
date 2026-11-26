@@ -27,6 +27,7 @@ constructor(
     @ApplicationContext context: Context,
     banner: ErrorBanner,
     private val storage: Storage,
+    private val secrets: Secrets,
     val device: DeviceAccess,
     private val engine: LauncherEngine,
     catalog: AppCatalog,
@@ -214,6 +215,16 @@ constructor(
 
     fun resetSetting(key: String) = launchAction { storage.reset(key) }
 
+    /** The saved OpenWeather key; empty without one or when it can no longer be read. */
+    fun weatherKey(): String = runCatching { secrets.get("weatherKey") }.getOrNull().orEmpty()
+
+    /** Saves the weather service and, for OpenWeather, its key apart from the settings. */
+    fun saveWeatherProvider(provider: String, key: String, saved: () -> Unit) = launchAction {
+        if (provider == "openweather") secrets.set("weatherKey", key.trim())
+        storage.update(mapOf(Settings.weatherProvider.key to provider))
+        saved()
+    }
+
     /** Sets a per-app preference such as favorite or hidden. */
     fun setAppFlag(appId: String, field: String, value: Boolean) = launchAction {
         storage.modify("app", appId) { it + (field to value.toString()) }
@@ -247,6 +258,7 @@ constructor(
                     null,
                 )
             )
+            secrets.clear()
             terminals.historyFile().delete()
         }
         navigate(Route.Home)

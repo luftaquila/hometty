@@ -43,6 +43,14 @@ object Placeholders {
             "{cwd}" to TextR.string.placeholder_folder,
         )
 
+    private val weather =
+        listOf(
+            "{city}" to TextR.string.placeholder_city,
+            "{temp}" to TextR.string.placeholder_temperature,
+            "{unit}" to TextR.string.placeholder_unit,
+            "{description}" to TextR.string.placeholder_conditions,
+        )
+
     private val feed =
         listOf(
             "{title}" to TextR.string.placeholder_title,
@@ -62,6 +70,7 @@ object Placeholders {
         when (key) {
             Settings.notificationFormat.key -> notification
             Settings.prompt.key -> prompt
+            Settings.weatherFormat.key -> weather
             else -> emptyList()
         }
 

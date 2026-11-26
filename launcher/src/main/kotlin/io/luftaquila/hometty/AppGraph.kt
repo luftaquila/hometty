@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import io.luftaquila.hometty.core.EntryStore
 import io.luftaquila.hometty.core.SettingsStore
 import io.luftaquila.hometty.core.StateStore
+import io.luftaquila.hometty.data.Secrets
 import io.luftaquila.hometty.data.Storage
 import io.luftaquila.hometty.platform.*
 import javax.inject.Inject
@@ -41,13 +42,16 @@ object AppGraph {
 
     @Provides fun stateStore(storage: Storage): StateStore = storage
 
+    @Provides @Singleton fun secrets(@ApplicationContext context: Context) = Secrets(context)
+
     @Provides @Singleton fun device(@ApplicationContext context: Context) = DeviceAccess(context)
 
     @Provides @Singleton fun notifications() = NotificationHub()
 
     @Provides
     @Singleton
-    fun network(settings: SettingsStore, state: StateStore) = NetworkData(settings, state)
+    fun network(settings: SettingsStore, state: StateStore, secrets: Secrets) =
+        NetworkData(settings, state, secrets)
 
     @Provides
     @Singleton

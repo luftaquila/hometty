@@ -218,6 +218,15 @@ object Commands {
             form(),
             *listOf("play", "pause", "next", "previous").map { form(it) }.toTypedArray(),
         )
+    val weather =
+        command(
+            "weather",
+            "label_weather",
+            TOOLS,
+            form(options = arrayOf(Cli.gui)),
+            // Saved apart from settings and backups, as from the settings; T-UI set weather_key with config.
+            form("key", "KEY", 1, 1, Cli.quiet),
+        )
     val rss =
         command(
             "rss",
@@ -265,7 +274,7 @@ object Commands {
             call, contacts,
             wifi, bluetooth, data, airplane, brightness, volume, flash, vibrate, location,
             status,
-            notes, calc, music, rss,
+            notes, calc, music, weather, rss,
             config, theme, help,
         )
     val byName = all.associateBy { it.name }

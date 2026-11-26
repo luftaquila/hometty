@@ -12,11 +12,16 @@
   <string name="choice_false">"Off"</string>
   <string name="choice_google">"Google"</string>
   <string name="choice_green">"Green"</string>
+  <string name="choice_imperial">"Fahrenheit"</string>
   <string name="choice_landscape">"Landscape"</string>
+  <string name="choice_metric">"Celsius"</string>
   <string name="choice_monospace">"System monospace"</string>
   <string name="choice_pink">"Pink"</string>
   <string name="choice_portrait">"Portrait"</string>
   <string name="choice_red">"Red"</string>
+  <string name="choice_standard">"Kelvin"</string>
+  <string name="choice_wttr">"wttr.in"</string>
+  <string name="choice_openweather">"OpenWeather"</string>
   <string name="choice_true">"On"</string>
   <string name="choice_youtube">"YouTube"</string>
   <string name="cli_option_order">"Options precede operands. Use -- before literal operands beginning with '-'."</string>
@@ -57,7 +62,7 @@
   <string name="label_copy_screen">"Copy screen"</string>
   <string name="label_date_selector">"Date selector"</string>
   <string name="label_delete">"Delete"</string>
-  <string name="label_deletes_settings_notes_aliases_rules_history_and_api_keys_shell_h">"Deletes settings, notes, aliases, rules and history. Shell home files and Android permissions remain."</string>
+  <string name="label_deletes_settings_notes_aliases_rules_history_and_api_keys_shell_h">"Deletes settings, notes, aliases, rules, history and API keys. Shell home files and Android permissions remain."</string>
   <string name="label_device_status">"Device status"</string>
   <string name="label_discard">"Discard"</string>
   <string name="label_discard_changes">"Discard changes?"</string>
@@ -69,6 +74,7 @@
   <string name="label_exclude_regex">"Exclude regex"</string>
   <string name="label_export_backup">"Export backup"</string>
   <string name="label_feeds">"Feeds"</string>
+  <string name="label_get_weather_key">"Get a key on OpenWeather"</string>
   <string name="label_font">"Font"</string>
   <string name="label_format_2">"Format"</string>
   <string name="label_https_url">"HTTPS URL"</string>
@@ -77,7 +83,7 @@
   <string name="label_include_hidden_apps">"Include hidden apps"</string>
   <string name="label_include_regex">"Include regex"</string>
   <string name="label_print_ids_names_and_launches">"Print IDs, names and launch counts"</string>
-  <string name="label_includes_settings_aliases_notes_rules_and_custom_font_excludes_ap">"Saves settings, aliases, notes, rules and an imported font. Notifications and command history are left out."</string>
+  <string name="label_includes_settings_aliases_notes_rules_and_custom_font_excludes_ap">"Saves settings, aliases, notes, rules and an imported font. API keys, notifications and command history are left out."</string>
   <string name="label_info">"Info"</string>
   <string name="label_interactive_terminal">"Interactive terminal"</string>
   <string name="label_keep_editing">"Keep editing"</string>
@@ -97,6 +103,7 @@
   <string name="label_open_2">"Open a URL"</string>
   <string name="label_open_graphical_interface">"Open graphical interface"</string>
   <string name="label_open_source_notices">"Open source notices"</string>
+  <string name="label_openweather_api_key">"OpenWeather API key"</string>
   <string name="label_paste">"Paste"</string>
   <string name="label_permission_denied_other_launcher_features_remain_available">"Permission denied."</string>
   <string name="label_permission_granted_retry_the_command">"Permission granted. Retry the command."</string>
@@ -123,6 +130,7 @@
   <string name="label_suppress_successful_output">"Suppress successful output"</string>
   <string name="label_terminal_home_visual_settings_interactive_pty">"Terminal home · visual settings · interactive PTY"</string>
   <string name="label_test_text">"Test text"</string>
+  <string name="label_test_weather">"Test weather"</string>
   <string name="label_text">"Text"</string>
   <string name="label_theme_presets">"Theme presets"</string>
   <string name="label_themes">"Themes"</string>
@@ -130,6 +138,7 @@
   <string name="label_use">"Use"</string>
   <string name="label_vibrate">"Vibrate"</string>
   <string name="label_volume">"Volume"</string>
+  <string name="label_weather">"Weather"</string>
   <string name="label_web_search">"Web search"</string>
   <string name="message_action_queue_full">"Action queue full"</string>
   <string name="message_alias_name_invalid_or_reserved">"Alias name invalid or reserved"</string>
@@ -150,6 +159,7 @@
   <string name="message_grant_do_not_disturb_access_then_retry">"Grant Do Not Disturb access, then retry"</string>
   <string name="message_grant_location_permission_then_retry">"Grant location permission, then retry."</string>
   <string name="message_grant_phone_permission_then_retry">"Grant phone permission, then retry."</string>
+  <string name="message_set_weather_key">"Enter an OpenWeather API key in Settings > Tools > Weather > Weather service, or run weather key KEY."</string>
   <string name="message_open_launcher_first">"Open the launcher, then retry."</string>
   <string name="message_pattern_too_long">"Pattern too long (2,048 characters at most)"</string>
   <string name="message_pattern_too_complex">"Pattern too complex: nested repetition counts multiply"</string>
@@ -190,7 +200,7 @@
   <string name="section_apps">"Apps and notifications"</string>
   <string name="section_apps_detail">"App messages, notifications and app management"</string>
   <string name="section_tools">"Tools"</string>
-  <string name="section_tools_detail">"Search, notes and feeds"</string>
+  <string name="section_tools_detail">"Search, notes, feeds and weather"</string>
   <string name="section_data">"History and data"</string>
   <string name="section_data_detail">"Command history, backup and reset"</string>
   <string name="settings_changed">"Changed settings"</string>
@@ -283,6 +293,8 @@
   <string name="label_set_orientation_desc">"Locks the screen to portrait or landscape. Automatic follows the device."</string>
   <string name="label_set_show_hints">"Welcome hint"</string>
   <string name="label_set_show_hints_desc">"Prints the version and basic commands when a shell starts."</string>
+  <string name="label_set_weather_format">"Weather format"</string>
+  <string name="label_set_weather_format_desc">"How the weather looks in the weather command and the status lines."</string>
   <string name="label_set_username">"User name"</string>
   <string name="label_set_username_desc">"The user name in the prompt."</string>
   <string name="label_set_device">"Device name"</string>
@@ -325,6 +337,10 @@
   <string name="label_set_rss_enabled_desc">"Fetches new items from your RSS feeds periodically."</string>
   <string name="label_set_rss_show_updates">"Show new items"</string>
   <string name="label_set_rss_show_updates_desc">"Prints new feed items in the terminal."</string>
+  <string name="label_set_units">"Units"</string>
+  <string name="label_set_units_desc">"Temperature units."</string>
+  <string name="label_set_weather_provider">"Weather service"</string>
+  <string name="label_set_weather_provider_desc">"Where the weather comes from. OpenWeather needs an API key."</string>
   <string name="label_set_history">"Save command history"</string>
   <string name="label_set_history_desc">"Saves commands for history and the Up key."</string>
   <string name="label_set_history_limit">"History size"</string>
@@ -387,7 +403,7 @@
   <string name="start_phone">"Phone"</string>
   <string name="start_phone_desc">"Places calls directly with call."</string>
   <string name="start_location">"Location"</string>
-  <string name="start_location_desc">"Uses your location for the location command."</string>
+  <string name="start_location_desc">"Uses your location for weather and the location command."</string>
   <string name="start_write_settings">"Modify system settings"</string>
   <string name="start_write_settings_desc">"Changes the screen brightness with brightness."</string>
   <string name="error_home_folder">"Cannot open folder: %1$s"</string>
@@ -411,6 +427,10 @@
   <string name="placeholder_user">"User name"</string>
   <string name="placeholder_device">"Device name"</string>
   <string name="placeholder_folder">"Current folder"</string>
+  <string name="placeholder_city">"City"</string>
+  <string name="placeholder_temperature">"Temperature"</string>
+  <string name="placeholder_unit">"Unit"</string>
+  <string name="placeholder_conditions">"Conditions"</string>
   <string name="placeholder_text">"Text"</string>
   <string name="placeholder_link">"Link"</string>
   <string name="placeholder_date">"Date"</string>

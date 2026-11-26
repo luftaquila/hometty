@@ -229,8 +229,8 @@ class EngineTest {
         fun keys(values: Map<String, String> = emptyMap()) =
             Settings.visibleSettings(SettingsSnapshot(values = values)).map { it.key }.toSet()
         val defaults = keys()
-        // Settings without a switch always show.
-        assertTrue("terminal.maxLines" in defaults)
+        // Weather needs no switch: its settings always show.
+        assertTrue("weather.format" in defaults)
         assertTrue("rss.intervalMinutes" !in defaults)
         assertTrue("appearance.opacity" !in defaults)
         val enabled =
@@ -242,7 +242,7 @@ class EngineTest {
             )
         assertTrue(
             enabled.containsAll(
-                setOf("terminal.maxLines", "rss.intervalMinutes", "appearance.opacity")
+                setOf("weather.format", "rss.intervalMinutes", "appearance.opacity")
             )
         )
         val disabledNotifications = keys(mapOf("notifications.enabled" to "false"))

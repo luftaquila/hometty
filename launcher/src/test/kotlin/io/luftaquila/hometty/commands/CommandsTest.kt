@@ -93,7 +93,7 @@ class CommandsTest {
             CommandRegistry(
                 listOf(
                         AppsCommands(unavailable(), store, unavailable(), names),
-                        ToolCommands(store, store, unavailable(), unavailable(), unavailable()),
+                        ToolCommands(store, store, unavailable(), unavailable(), unavailable(), unavailable()),
                         LauncherCommands(store),
                     )
                     .flatMap { it.commands }
@@ -202,7 +202,7 @@ class CommandsTest {
 
     @Test
     fun registryRejectsTwoImplementationsOfOneCommand() {
-        val notes = ToolCommands(store, store, unavailable(), unavailable(), unavailable()).commands
+        val notes = ToolCommands(store, store, unavailable(), unavailable(), unavailable(), unavailable()).commands
         assertThrows(IllegalArgumentException::class.java) { CommandRegistry(notes + notes) }
         assertTrue("wifi" in CommandRegistry(notes).missing)
     }

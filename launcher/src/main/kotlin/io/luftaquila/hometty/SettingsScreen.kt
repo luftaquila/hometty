@@ -147,6 +147,15 @@ val settingsSections =
                         Settings.rssShowUpdates.key,
                     ),
                 ),
+                SettingsGroup(
+                    "weather",
+                    TextR.string.label_weather,
+                    listOf(
+                        Settings.weatherProvider.key,
+                        Settings.units.key,
+                        Settings.weatherFormat.key,
+                    ),
+                ),
             ),
         ),
         SettingsSection(
@@ -466,6 +475,8 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
             HomeFolderDialog(settings.string(key), { editingKey = null }) { value ->
                 model.setSetting(key, value) { saved -> if (saved) editingKey = null }
             }
+        else if (key == Settings.weatherProvider.key)
+            WeatherProviderDialog(model, settings) { editingKey = null }
         else SettingDialog(
             definition,
             settings,
@@ -611,6 +622,10 @@ private fun GroupLinksAfter(
         "viewing" -> manager("notificationRule")
         "notes" -> manager("note")
         "rss" -> manager("rss")
+        "weather" ->
+            SettingsLink(context.getString(TextR.string.label_test_weather)) {
+                model.runInDialog("weather")
+            }
         "backup" ->
             SettingsLink(
                 context.getString(TextR.string.label_backup_restore),
@@ -783,6 +798,7 @@ private fun SettingDialog(
                                 definition.key !in
                                     setOf(
                                         Settings.notificationFormat.key,
+                                        Settings.weatherFormat.key,
                                     ),
                             keyboardOptions =
                                 KeyboardOptions(
@@ -822,6 +838,66 @@ private fun SettingDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(context.getString(TextR.string.label_cancel)) }
+        },
+    )
+}
+
+/** The weather service; choosing OpenWeather asks for its API key right here. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WeatherProviderDialog(model: HomeViewModel, settings: SettingsSnapshot, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    val definition = Settings.weatherProvider.definition
+    var provider by rememberSaveable { mutableStateOf(settings[Settings.weatherProvider]) }
+    // Not saveable: the key stays out of the saved instance state.
+    val key = remember { androidx.compose.foundation.text.input.TextFieldState(model.weatherKey()) }
+    val openWeather = provider == "openweather"
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text(context.text(definition.title)) },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    definition.choices.forEachIndexed { index, choice ->
+                        SegmentedButton(
+                            selected = provider == choice,
+                            onClick = { provider = choice },
+                            shape = SegmentedButtonDefaults.itemShape(index, definition.choices.size),
+                            modifier = Modifier.testTag("weatherProvider:$choice"),
+                        ) {
+                            Text(context.choiceLabel(choice))
+                        }
+                    }
+                }
+                if (openWeather) {
+                    OutlinedSecureTextField(
+                        key,
+                        Modifier.fillMaxWidth().testTag("weatherKey"),
+                        label = { Text(context.getString(TextR.string.label_openweather_api_key)) },
+                    )
+                    TextButton(
+                        onClick = { model.device.open("https://home.openweathermap.org/api_keys") },
+                        Modifier.testTag("openWeatherSite"),
+                    ) {
+                        Text(context.getString(TextR.string.label_get_weather_key))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            // OpenWeather without a key would only fail later.
+            TextButton(
+                onClick = { model.saveWeatherProvider(provider, key.text.toString(), dismiss) },
+                enabled = !openWeather || key.text.isNotBlank(),
+            ) {
+                Text(context.getString(TextR.string.label_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = dismiss) { Text(context.getString(TextR.string.label_cancel)) }
         },
     )
 }
