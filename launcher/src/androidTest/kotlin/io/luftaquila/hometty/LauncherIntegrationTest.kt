@@ -314,9 +314,14 @@ class LauncherIntegrationTest {
         // Row 0: 한글 written over a blue background. Row 1: 한 written with a red background.
         session.write(
             "clear; printf '\\033[44m      \\033[0m\\r\\355\\225\\234\\352\\270\\200\\n" +
-                "\\033[41m\\355\\225\\234\\033[0m\\n'\n"
+                "\\033[41m\\355\\225\\234\\033[0m\\nWIDE_GLYPHS_READY\\n'\n"
         )
-        withTimeout(5000) { session.atPrompt.first { it } }
+        // A resize can redraw the old prompt before this command finishes. Capture only after
+        // its final output arrives, so the pixel assertions inspect the two colored rows.
+        waitFor("both wide glyph rows and the next prompt", session) {
+            session.atPrompt.value &&
+                visibleText(session).lines().any { it.trimEnd() == "WIDE_GLYPHS_READY" }
+        }
         val bitmap =
             android.graphics.Bitmap.createBitmap(
                 terminal.width,
