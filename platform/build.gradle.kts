@@ -24,5 +24,6 @@ dependencies {
     implementation(project(":data"))
     implementation(libs.work)
     implementation(libs.okhttp)
+    implementation(libs.billing.ktx)
     implementation(libs.jsoup)
 }

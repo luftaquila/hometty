@@ -113,26 +113,38 @@ fun AboutScreen(model: HomeViewModel) {
             item {
                 Text(
                     "hometty",
-                    Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                    Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp),
                     style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
-                    "${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE}",
+                    BuildConfig.VERSION_NAME,
                     Modifier.padding(horizontal = 20.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    context.getString(
-                        TextR.string.label_terminal_home_visual_settings_interactive_pty
-                    ),
-                    Modifier.padding(20.dp),
+                    context.getString(TextR.string.about_description),
+                    Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
                 )
-                SectionLabel(context.getString(TextR.string.label_open_source_notices))
-                Text(
-                    context.getString(TextR.string.open_source_notices_body),
-                    Modifier.padding(20.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            }
+            item {
+                SettingsLink(context.getString(TextR.string.about_source_code), "github.com/luftaquila/hometty") {
+                    model.device.open("https://github.com/luftaquila/hometty")
+                }
+            }
+            item {
+                SettingsLink(context.getString(TextR.string.about_inspired_by), "github.com/fandreuz/TUI-ConsoleLauncher") {
+                    model.device.open("https://github.com/fandreuz/TUI-ConsoleLauncher")
+                }
+            }
+            item {
+                SettingsLink(context.getString(TextR.string.donate_title), context.getString(TextR.string.donate_summary)) {
+                    model.navigate(Route.Donate)
+                }
+            }
+            item {
+                SettingsLink(context.getString(TextR.string.label_open_source_notices)) {
+                    model.navigate(Route.Licenses)
+                }
             }
         }
     }

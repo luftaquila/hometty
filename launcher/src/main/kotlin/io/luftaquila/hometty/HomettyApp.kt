@@ -161,6 +161,8 @@ fun HomettyApp(model: HomeViewModel, features: FeatureModels) {
                                         is Route.Apps -> AppsScreen(model)
                                         Route.Backup -> BackupScreen(model, features.backup)
                                         Route.About -> AboutScreen(model)
+                                        Route.Licenses -> LicensesScreen(model)
+                                        Route.Donate -> DonateScreen(model)
                                     }
                             }
                         }

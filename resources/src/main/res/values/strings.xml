@@ -1,5 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+  <string name="about_description">"A CLI shell launcher for Android"</string>
+  <string name="about_inspired_by">"Inspired by T-UI"</string>
+  <string name="about_source_code">"Source code"</string>
   <string name="app_not_found">"App not found: %1$s. Run apps to list applications."</string>
   <string name="backup_restore_summary">"%1$s · %2$s\n%3$s\n\nReplaces current data. Root will be disabled."</string>
   <string name="choice_auto">"Automatic"</string>
@@ -28,6 +31,14 @@
   <string name="cli_options">"Options:"</string>
   <string name="cli_usage">"Usage:"</string>
   <string name="delete_entry_title">"Delete %1$s?"</string>
+  <string name="donate_desc">"Donations go toward improving the app"</string>
+  <string name="donate_headline">"Every feature is free"</string>
+  <string name="donate_large">"A big thank you"</string>
+  <string name="donate_medium">"A lunch"</string>
+  <string name="donate_small">"A coffee"</string>
+  <string name="donate_summary">"Support development"</string>
+  <string name="donate_thanks">"Thank you for your support"</string>
+  <string name="donate_title">"Donate"</string>
   <string name="error_boolean">"Choose true or false"</string>
   <string name="error_choice">"Choose one of: %1$s"</string>
   <string name="error_color">"Use #RRGGBB or #AARRGGBB"</string>
@@ -54,6 +65,7 @@
   <string name="label_calculator">"Arithmetic with awk: calc 2 * 3, or calc alone for parentheses and sqrt()"</string>
   <string name="label_call">"Call"</string>
   <string name="label_cancel">"Cancel"</string>
+  <string name="label_close">"Close"</string>
   <string name="label_command_arguments_1">"Command"</string>
   <string name="label_command_help">"Command help"</string>
   <string name="label_config_settings_nhello_terminal_123">"config → Settings\nHello, terminal. 123"</string>
@@ -103,7 +115,7 @@
   <string name="label_open">"Open"</string>
   <string name="label_open_2">"Open a URL"</string>
   <string name="label_open_graphical_interface">"Open graphical interface"</string>
-  <string name="label_open_source_notices">"Open source notices"</string>
+  <string name="label_open_source_notices">"Open source licenses"</string>
   <string name="label_openweather_api_key">"OpenWeather API key"</string>
   <string name="label_paste">"Paste"</string>
   <string name="label_permission_denied_other_launcher_features_remain_available">"Permission denied."</string>
@@ -129,7 +141,6 @@
   <string name="label_show_help_and_exit">"Show help and exit"</string>
   <string name="label_show_version_and_exit">"Show version and exit"</string>
   <string name="label_suppress_successful_output">"Suppress successful output"</string>
-  <string name="label_terminal_home_visual_settings_interactive_pty">"Terminal home · visual settings · interactive PTY"</string>
   <string name="label_test_text">"Test text"</string>
   <string name="label_test_weather">"Test weather"</string>
   <string name="label_text">"Text"</string>
@@ -180,7 +191,8 @@
   <string name="message_unsupported_url_scheme">"Unsupported URL scheme"</string>
   <string name="message_use_on_or_off">"Use on or off"</string>
   <string name="message_vibrated">"Vibrated"</string>
-  <string name="open_source_notices_body">"hometty: MIT. Inspired by T-UI (Linux CLI Launcher) by Francesco Andreuzzi.\nlibvterm 0.3.3: MIT, Paul Evans.\nBusyBox: GPL-2.0; source and changes: third_party/busybox/PROVENANCE.md.\nBundled fonts: Jetendard, D2Coding, JetBrains Mono, Fira Code, Cascadia Code, Source Code Pro, IBM Plex Mono, Iosevka and 0xProto under SIL OFL 1.1; Hack under the MIT and Bitstream Vera licenses. License texts are in the APK's assets/licenses.\nAndroidX, Kotlin, OkHttp, RE2/J and other dependencies: see their upstream notices."</string>
+  <string name="purchase_failed">"The payment did not go through"</string>
+  <string name="purchase_unavailable">"Can't reach the Play Store"</string>
   <string name="shell_exited">"[process exited: %1$s] Tap to start a new shell"</string>
   <string name="shell_starting">"Starting shell…"</string>
   <plurals name="settings_count">

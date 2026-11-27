@@ -48,6 +48,8 @@ object AppGraph {
 
     @Provides @Singleton fun notifications() = NotificationHub()
 
+    @Provides @Singleton fun purchases(@ApplicationContext context: Context) = Purchases(context)
+
     @Provides
     @Singleton
     fun network(settings: SettingsStore, state: StateStore, secrets: Secrets) =

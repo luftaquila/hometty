@@ -29,6 +29,7 @@ constructor(
     private val storage: Storage,
     private val secrets: Secrets,
     val device: DeviceAccess,
+    val purchases: Purchases,
     private val engine: LauncherEngine,
     catalog: AppCatalog,
     private val terminals: TerminalHost,

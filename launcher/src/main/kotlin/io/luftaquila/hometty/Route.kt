@@ -26,4 +26,8 @@ sealed class Route(val path: String) {
     data object Backup : Route("backup")
 
     data object About : Route("about")
+
+    data object Licenses : Route("about/licenses")
+
+    data object Donate : Route("donate")
 }

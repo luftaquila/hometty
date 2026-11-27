@@ -625,6 +625,25 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun aboutOpensLicensesAndDonations() {
+        val model = model
+        // Every listed license has its text in the APK.
+        LICENSES.forEach { context.assets.open(it.asset).close() }
+        compose.runOnUiThread { model.navigate(Route.About) }
+        compose.onNodeWithText(BuildConfig.VERSION_NAME).assertExists()
+        compose.onNodeWithText(context.getString(TextR.string.label_open_source_notices)).performClick()
+        compose.onNodeWithText("BusyBox").performClick()
+        compose.onNodeWithText("GNU GENERAL PUBLIC LICENSE", substring = true).assertExists()
+        compose.onNodeWithText(context.getString(TextR.string.label_close)).performClick()
+        compose.onNodeWithText("GNU GENERAL PUBLIC LICENSE", substring = true).assertDoesNotExist()
+        compose.runOnUiThread { model.back() }
+        compose.onNodeWithText(context.getString(TextR.string.donate_title)).performClick()
+        compose.onNodeWithText(context.getString(TextR.string.donate_headline)).assertExists()
+        compose.onNodeWithText(context.getString(TextR.string.donate_small)).assertExists()
+        compose.onNodeWithText("GitHub Sponsors").assertExists()
+    }
+
+    @Test
     fun unknownAndInvalidLocalSettingsDoNotDiscardValidPreferences(): Unit = runBlocking {
         val settings =
             io.luftaquila.hometty.data.SettingsSerializer.readFrom(

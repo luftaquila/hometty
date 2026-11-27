@@ -334,6 +334,14 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
                         )
                     }
                     item {
+                        SettingsLink(
+                            context.getString(TextR.string.donate_title),
+                            context.getString(TextR.string.donate_summary),
+                        ) {
+                            model.navigate(Route.Donate)
+                        }
+                    }
+                    item {
                         SettingsLink(context.getString(TextR.string.label_about)) {
                             model.navigate(Route.About)
                         }
