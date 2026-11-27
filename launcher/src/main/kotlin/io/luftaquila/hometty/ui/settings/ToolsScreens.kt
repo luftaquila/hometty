@@ -136,8 +136,8 @@ fun AboutScreen(model: HomeViewModel) {
                 }
             }
             item {
-                SettingsLink(context.getString(TextR.string.about_privacy_policy), "luftaquila.github.io/hometty/privacy") {
-                    model.device.open("https://luftaquila.github.io/hometty/privacy")
+                SettingsLink(context.getString(TextR.string.about_privacy_policy), "github.com/luftaquila/hometty/blob/master/docs/privacy.md") {
+                    model.device.open("https://github.com/luftaquila/hometty/blob/master/docs/privacy.md")
                 }
             }
             item {

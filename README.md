@@ -15,7 +15,7 @@ Install the APK (Android 10+) and set hometty as your home app.
 
 Type `help` to see the commands and `config` to change settings.
 
-[Privacy policy](https://luftaquila.github.io/hometty/privacy)
+[Privacy policy](https://github.com/luftaquila/hometty/blob/master/docs/privacy.md)
 
 ```sh
 apps -al
