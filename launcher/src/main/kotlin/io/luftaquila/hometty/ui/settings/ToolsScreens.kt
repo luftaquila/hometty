@@ -136,6 +136,11 @@ fun AboutScreen(model: HomeViewModel) {
                 }
             }
             item {
+                SettingsLink(context.getString(TextR.string.about_privacy_policy), "luftaquila.github.io/hometty/privacy") {
+                    model.device.open("https://luftaquila.github.io/hometty/privacy")
+                }
+            }
+            item {
                 SettingsLink(context.getString(TextR.string.about_inspired_by), "github.com/fandreuz/TUI-ConsoleLauncher") {
                     model.device.open("https://github.com/fandreuz/TUI-ConsoleLauncher")
                 }

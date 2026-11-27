@@ -2,6 +2,7 @@
 <resources>
   <string name="about_description">"A CLI shell launcher for Android"</string>
   <string name="about_inspired_by">"Inspired by T-UI"</string>
+  <string name="about_privacy_policy">"Privacy policy"</string>
   <string name="about_source_code">"Source code"</string>
   <string name="app_not_found">"App not found: %1$s. Run apps to list applications."</string>
   <string name="backup_restore_summary">"%1$s · %2$s\n%3$s\n\nReplaces current data. Root will be disabled."</string>

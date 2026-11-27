@@ -15,6 +15,8 @@ Install the APK (Android 10+) and set hometty as your home app.
 
 Type `help` to see the commands and `config` to change settings.
 
+[Privacy policy](https://luftaquila.github.io/hometty/privacy)
+
 ```sh
 apps -al
 chrome
@@ -34,3 +36,6 @@ Requires JDK 26, Python 3.12+, `patch`, and the Android SDK with NDK 28.2.136763
 ```
 
 The first build downloads and compiles BusyBox using the pinned [build recipe](busybox/README.md).
+
+Release downloads include the matching BusyBox source archive with patched sources,
+licenses and offline build instructions.
