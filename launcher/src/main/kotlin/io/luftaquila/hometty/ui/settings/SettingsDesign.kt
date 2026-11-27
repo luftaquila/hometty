@@ -26,6 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
@@ -259,47 +261,74 @@ fun PreferenceRow(
     modifier: Modifier = Modifier,
     glyph: SettingsGlyph? = null,
     onClick: (() -> Unit)? = null,
+    value: String? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
-    Row(
+    Column(
         modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .heightIn(min = 64.dp)
             .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
     ) {
-        if (glyph != null)
-            Box(
-                Modifier.size(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                SettingsIcon(glyph, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (glyph != null)
+                Box(
+                    Modifier.size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    SettingsIcon(glyph, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge)
+                if (!summary.isNullOrBlank())
+                    Text(
+                        summary,
+                        // Lines break between words (Korean included) and stay balanced, so a
+                        // description never ends with one stray syllable.
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                lineBreak =
+                                    androidx.compose.ui.text.style.LineBreak.Paragraph.copy(
+                                        wordBreak =
+                                            androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase
+                                    )
+                            ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
             }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            if (!summary.isNullOrBlank())
-                Text(
-                    summary,
-                    // Lines break between words (Korean included) and stay balanced, so a
-                    // description never ends with one stray syllable.
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            lineBreak =
-                                androidx.compose.ui.text.style.LineBreak.Paragraph.copy(
-                                    wordBreak =
-                                        androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase
-                                )
-                        ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (trailing != null) trailing()
+            else if (onClick != null)
+                SettingsIcon(SettingsGlyph.Next, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (trailing != null) trailing()
-        else if (onClick != null)
-            SettingsIcon(SettingsGlyph.Next, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (value != null) PreferenceValue(value)
+    }
+}
+
+/** Long values use the row's full width; the editor keeps the complete, editable text. */
+@Composable
+fun PreferenceValue(value: String, maxLines: Int = 5, monospace: Boolean = true) {
+    Surface(
+        Modifier.fillMaxWidth().testTag("preferenceValue"),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Text(
+            value,
+            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

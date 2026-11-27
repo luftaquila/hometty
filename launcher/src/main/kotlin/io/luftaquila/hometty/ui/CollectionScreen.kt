@@ -33,6 +33,7 @@ import io.luftaquila.hometty.resources.text
 import io.luftaquila.hometty.shell.TerminalNotices
 import io.luftaquila.hometty.ui.settings.ColorSwatches
 import io.luftaquila.hometty.ui.settings.PreferenceRow
+import io.luftaquila.hometty.ui.settings.PreferenceValue
 import io.luftaquila.hometty.ui.settings.SectionLabel
 import io.luftaquila.hometty.ui.settings.SettingsGlyph
 import io.luftaquila.hometty.ui.settings.SettingsIcon
@@ -112,74 +113,91 @@ fun CollectionScreen(model: HomeViewModel, kind: String) {
                 textContext.getString(TextR.string.label_no_entries_tap_add_to_create_one),
                 Modifier.padding(24.dp),
             )
-        // One line per entry, so long lists such as aliases fit on screen.
+        // Aliases keep their compact name/command row; notes and URLs use a wider preview.
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
             items(records, key = { it.id }) { entry ->
-                Row(
+                val compact = kind == "alias"
+                Column(
                     Modifier.fillMaxWidth()
                         .combinedClickable(
                             onClick = { if (entry.fields["locked"] != "true") editing = entry },
                             onLongClick = { menuFor = entry.id },
                         )
-                        .padding(start = 20.dp, top = 2.dp, bottom = 2.dp)
+                        .then(
+                            if (compact) Modifier.padding(start = 20.dp, top = 2.dp, bottom = 2.dp)
+                            else Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                        )
                         .testTag("entry:${entry.name}"),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text(
-                        entry.name,
-                        Modifier.widthIn(min = 56.dp, max = 160.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        entrySummary(entry, apps, textContext),
-                        Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                    Box {
-                        IconButton(onClick = { menuFor = entry.id }, Modifier.size(40.dp)) {
-                            SettingsIcon(SettingsGlyph.More)
-                        }
-                        DropdownMenu(menuFor == entry.id, { menuFor = null }) {
-                            @Composable
-                            fun action(label: Int, run: () -> Unit) =
-                                DropdownMenuItem(
-                                    text = { Text(textContext.getString(label)) },
-                                    onClick = {
-                                        menuFor = null
-                                        run()
-                                    },
-                                )
-                            when (kind) {
-                                "alias" ->
-                                    action(TextR.string.label_use) {
-                                        model.stageCommand(entry.name)
-                                        model.navigate(Route.Home)
-                                    }
-                                "rss" ->
-                                    action(TextR.string.label_refresh) {
-                                        model.runFromSettings(
-                                            "rss update ${Shell.quote(entry.name)}"
-                                        )
-                                    }
-                                "note" ->
-                                    action(TextR.string.label_copy) {
-                                        model.device.copy(entry.fields["text"].orEmpty())
-                                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 0.dp),
+                    ) {
+                        Text(
+                            entry.name,
+                            if (compact) Modifier.widthIn(min = 56.dp, max = 160.dp)
+                            else Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        if (compact)
+                            Text(
+                                entrySummary(entry, apps, textContext),
+                                Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        Box {
+                            IconButton(onClick = { menuFor = entry.id }, Modifier.size(40.dp)) {
+                                SettingsIcon(SettingsGlyph.More)
                             }
-                            // A locked note can be neither edited nor deleted.
-                            if (entry.fields["locked"] != "true") {
-                                action(TextR.string.label_edit) { editing = entry }
-                                action(TextR.string.label_delete) { deleting = entry }
+                            DropdownMenu(menuFor == entry.id, { menuFor = null }) {
+                                @Composable
+                                fun action(label: Int, run: () -> Unit) =
+                                    DropdownMenuItem(
+                                        text = { Text(textContext.getString(label)) },
+                                        onClick = {
+                                            menuFor = null
+                                            run()
+                                        },
+                                    )
+                                when (kind) {
+                                    "alias" ->
+                                        action(TextR.string.label_use) {
+                                            model.stageCommand(entry.name)
+                                            model.navigate(Route.Home)
+                                        }
+                                    "rss" ->
+                                        action(TextR.string.label_refresh) {
+                                            model.runFromSettings(
+                                                "rss update ${Shell.quote(entry.name)}"
+                                            )
+                                        }
+                                    "note" ->
+                                        action(TextR.string.label_copy) {
+                                            model.device.copy(entry.fields["text"].orEmpty())
+                                        }
+                                }
+                                // A locked note can be neither edited nor deleted.
+                                if (entry.fields["locked"] != "true") {
+                                    action(TextR.string.label_edit) { editing = entry }
+                                    action(TextR.string.label_delete) { deleting = entry }
+                                }
                             }
                         }
                     }
+                    if (!compact)
+                        PreferenceValue(
+                            entrySummary(entry, apps, textContext),
+                            maxLines = 3,
+                            monospace = kind != "note",
+                        )
                 }
             }
         }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -429,8 +430,9 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
                     items(definitions, key = { it.key }) { definition ->
                         PreferenceRow(
                             context.text(definition.title),
-                            settingValue(context, definition, settings),
+                            settingValue(context, definition, settings).takeUnless { definition.kind == SettingKind.TEXT },
                             Modifier.testTag("changed:${definition.key}"),
+                            value = settingValue(context, definition, settings).takeIf { definition.kind == SettingKind.TEXT },
                             trailing = {
                                 TextButton(
                                     onClick = {
@@ -709,7 +711,7 @@ private fun SettingRow(
 ) {
     val context = LocalContext.current
     val modifier = Modifier.testTag("setting:${definition.key}")
-    // Every row says what the setting changes; the current value sits on the right.
+    // Text values need the full row width; bounded choices and numbers fit beside the title.
     val description = definition.description.takeIf { it.isNotBlank() }?.let(context::text)
     if (definition.kind == SettingKind.BOOLEAN)
         TogglePreference(
@@ -725,23 +727,26 @@ private fun SettingRow(
             description,
             modifier,
             onClick = edit,
-            trailing = {
-                if (definition.kind == SettingKind.COLOR)
-                    Surface(
-                        Modifier.size(28.dp),
-                        color = color(settings.string(definition.key)),
-                        shape = RoundedCornerShape(9.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {}
-                else
-                    Text(
-                        settingValue(context, definition, settings),
-                        Modifier.widthIn(max = 132.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge,
-                        maxLines = 2,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
+            value = settingValue(context, definition, settings).takeIf { definition.kind == SettingKind.TEXT },
+            trailing = if (definition.kind == SettingKind.TEXT) null else {
+                {
+                    if (definition.kind == SettingKind.COLOR)
+                        Surface(
+                            Modifier.size(28.dp),
+                            color = color(settings.string(definition.key)),
+                            shape = RoundedCornerShape(9.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        ) {}
+                    else
+                        Text(
+                            settingValue(context, definition, settings),
+                            Modifier.widthIn(max = 132.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                }
             },
         )
 }
@@ -904,15 +909,23 @@ private fun WeatherProviderDialog(model: HomeViewModel, settings: SettingsSnapsh
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    definition.choices.forEachIndexed { index, choice ->
-                        SegmentedButton(
-                            selected = provider == choice,
-                            onClick = { provider = choice },
-                            shape = SegmentedButtonDefaults.itemShape(index, definition.choices.size),
-                            modifier = Modifier.testTag("weatherProvider:$choice"),
+                Column(Modifier.fillMaxWidth().selectableGroup()) {
+                    definition.choices.forEach { choice ->
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .testTag("weatherProvider:$choice")
+                                .selectable(
+                                    selected = provider == choice,
+                                    role = Role.RadioButton,
+                                    onClick = { provider = choice },
+                                )
+                                .heightIn(min = 48.dp)
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(context.choiceLabel(choice))
+                            RadioButton(selected = provider == choice, onClick = null)
+                            Text(context.choiceLabel(choice), Modifier.weight(1f))
                         }
                     }
                 }
