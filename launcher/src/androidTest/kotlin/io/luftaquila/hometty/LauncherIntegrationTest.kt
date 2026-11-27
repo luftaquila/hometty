@@ -953,8 +953,12 @@ class LauncherIntegrationTest {
             post("hometty-$text", io.luftaquila.hometty.core.NotificationContent("io.luftaquila.hometty.sentinel", "Sentinel", "S", text), false)
             waitFor("the sentinel $text", session) { text in unwrapped(session) }
         }
-        session.write("clear\n")
-        withTimeout(5000) { session.atPrompt.first { it } }
+        // A resize can redraw the old prompt before clear has run. Wait for output from this
+        // command, or a notice posted at that old prompt can be erased by the pending clear.
+        session.write("clear; printf 'NOTICE_READY\\n'\n")
+        waitFor("the cleared notification screen", session) {
+            session.atPrompt.value && lines().any { it.trimEnd() == "NOTICE_READY" }
+        }
         post("hometty-open", content, false)
         waitFor("the notification", session) { lines().any { "OPENME" in it } }
         val row = lines().indexOfLast { "OPENME" in it }
