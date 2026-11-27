@@ -644,6 +644,21 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun displaySettingsOfferTheAppLanguages() {
+        // Per-app languages, and the row for them, start at Android 13.
+        Assume.assumeTrue(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
+        val model = model
+        val label = context.getString(TextR.string.label_app_language)
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("appearance")) }
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label))
+        compose.onNodeWithText(label).performClick()
+        compose.onNodeWithText("English").assertExists()
+        compose.onNodeWithText("한국어").assertExists()
+        compose.onNodeWithText(context.getString(TextR.string.label_cancel)).performClick()
+        compose.onNodeWithText("한국어").assertDoesNotExist()
+    }
+
+    @Test
     fun unknownAndInvalidLocalSettingsDoNotDiscardValidPreferences(): Unit = runBlocking {
         val settings =
             io.luftaquila.hometty.data.SettingsSerializer.readFrom(

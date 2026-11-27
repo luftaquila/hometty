@@ -52,7 +52,7 @@ val settingsSections =
             TextR.string.section_display,
             TextR.string.section_display_detail,
             SettingsGlyph.Display,
-            listOf(
+            listOfNotNull(
                 SettingsGroup("theme", TextR.string.group_theme_font, listOf(Settings.fontSize.key)),
                 SettingsGroup(
                     "window",
@@ -64,6 +64,10 @@ val settingsSections =
                         Settings.opacity.key,
                     ),
                 ),
+                // Per-app languages are Android's own setting, from Android 13.
+                SettingsGroup("language", TextR.string.group_language).takeIf {
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+                },
                 SettingsGroup("reset", TextR.string.group_reset),
             ),
         ),
@@ -583,6 +587,9 @@ private fun GroupLinksBefore(group: String, settings: SettingsSnapshot, model: H
                 model.navigate(Route.SettingsPage("colors"))
             }
         }
+        "language" ->
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
+                AppLanguage()
         "viewing" ->
             if (!notificationAccessGranted(context))
                 SettingsLink(
@@ -966,4 +973,61 @@ fun ColorSwatches(value: String, select: (String) -> Unit) {
             }
         }
     }
+}
+
+/** The app's language, kept by Android (per-app language) rather than in the settings. */
+@androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.TIRAMISU)
+@Composable
+private fun AppLanguage() {
+    val context = LocalContext.current
+    val manager = remember { context.getSystemService(android.app.LocaleManager::class.java) }
+    // Empty: follow the system. The names stay in their own language, as Android shows them.
+    val choices =
+        listOf(
+            "" to context.getString(TextR.string.language_system_default),
+            "en" to "English",
+            "ko" to "한국어",
+        )
+    val current = manager.applicationLocales.toLanguageTags().substringBefore('-')
+    var choosing by remember { mutableStateOf(false) }
+    SettingsLink(
+        context.getString(TextR.string.label_app_language),
+        choices.firstOrNull { it.first == current }?.second ?: choices.first().second,
+    ) {
+        choosing = true
+    }
+    if (choosing)
+        AlertDialog(
+            onDismissRequest = { choosing = false },
+            title = { Text(context.getString(TextR.string.label_app_language)) },
+            text = {
+                Column {
+                    choices.forEach { (tag, label) ->
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .selectable(
+                                    tag == current,
+                                    role = Role.RadioButton,
+                                    onClick = {
+                                        choosing = false
+                                        // Android recreates the screens in the new language.
+                                        manager.applicationLocales =
+                                            android.os.LocaleList.forLanguageTags(tag)
+                                    },
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(tag == current, null)
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { choosing = false }) {
+                    Text(context.getString(TextR.string.label_cancel))
+                }
+            },
+        )
 }

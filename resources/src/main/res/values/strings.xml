@@ -47,6 +47,7 @@
   <string name="error_minimum">"Minimum: %1$s"</string>
   <string name="error_step">"Use steps of %1$s"</string>
   <string name="error_too_long">"Value is too long"</string>
+  <string name="group_language">"Language"</string>
   <string name="home_default_active">"hometty is your default home app."</string>
   <string name="home_default_choose">"Set default home app"</string>
   <string name="home_default_selected">"Default home app settings"</string>
@@ -56,6 +57,7 @@
   <string name="label_about">"About"</string>
   <string name="label_add">"Add"</string>
   <string name="label_aliases">"Aliases"</string>
+  <string name="label_app_language">"App language"</string>
   <string name="label_applications">"Applications"</string>
   <string name="label_apps">"Apps"</string>
   <string name="label_apps_2">"Apps"</string>
@@ -152,6 +154,7 @@
   <string name="label_volume">"Volume"</string>
   <string name="label_weather">"Weather"</string>
   <string name="label_web_search">"Web search"</string>
+  <string name="language_system_default">"System default"</string>
   <string name="message_action_queue_full">"Action queue full"</string>
   <string name="message_alias_name_invalid_or_reserved">"Alias name invalid or reserved"</string>
   <string name="message_backup_restored_root_is_disabled">"Backup restored. Root is disabled."</string>

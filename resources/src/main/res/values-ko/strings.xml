@@ -47,6 +47,7 @@
   <string name="error_minimum">"최솟값: %1$s"</string>
   <string name="error_step">"%1$s 단위로 입력하세요"</string>
   <string name="error_too_long">"입력값이 너무 깁니다"</string>
+  <string name="group_language">"언어"</string>
   <string name="home_default_active">"hometty가 기본 홈 앱으로 설정되어 있습니다."</string>
   <string name="home_default_choose">"기본 홈 앱 설정"</string>
   <string name="home_default_selected">"기본 홈 앱 관리"</string>
@@ -56,6 +57,7 @@
   <string name="label_about">"앱 정보"</string>
   <string name="label_add">"추가"</string>
   <string name="label_aliases">"별칭"</string>
+  <string name="label_app_language">"앱 언어"</string>
   <string name="label_applications">"앱 실행·관리"</string>
   <string name="label_apps">"앱"</string>
   <string name="label_apps_2">"앱 목록"</string>
@@ -152,6 +154,7 @@
   <string name="label_volume">"볼륨"</string>
   <string name="label_weather">"날씨"</string>
   <string name="label_web_search">"웹 검색"</string>
+  <string name="language_system_default">"시스템 기본값"</string>
   <string name="message_action_queue_full">"처리 대기 중인 작업이 너무 많습니다"</string>
   <string name="message_alias_name_invalid_or_reserved">"올바르지 않거나 예약된 별칭 이름입니다"</string>
   <string name="message_backup_restored_root_is_disabled">"백업을 복원했습니다. root는 비활성화되었습니다."</string>
