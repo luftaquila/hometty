@@ -19,6 +19,7 @@ import io.luftaquila.hometty.shell.CLEAR_LINE
 import io.luftaquila.hometty.shell.TerminalHost
 import io.luftaquila.hometty.shell.TerminalNotices
 import io.luftaquila.hometty.ui.settings.settingsRoute
+import io.luftaquila.hometty.ui.settings.settingsEditorKey
 import javax.inject.Inject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -116,7 +117,7 @@ constructor(
     }
 
     private suspend fun statusValues(format: String, snapshot: SettingsSnapshot): Map<String, String> {
-        if ("{weather}" in format) {
+        if (StatusLines.usesWeather(format)) {
             if (snapshot[Settings.weatherProvider] != "off") refreshWeather(snapshot)
             else {
                 // Off: nothing is fetched, and turning it on again fetches at once.
@@ -126,11 +127,14 @@ constructor(
             }
         }
         // System services and the file system: off the main thread, which draws every second.
-        val (status, charging) = withContext(Dispatchers.Default) { device.status() to device.charging() }
+        val (status, charging) = withContext(Dispatchers.Default) { device.statusValues() to device.charging() }
         return status + mapOf(
             "charging" to if (charging) context.getString(TextR.string.status_charging) else "",
             "device" to snapshot[Settings.deviceName],
             "weather" to weather,
+            "weatherAvailable" to (!weatherFailed && weather.isNotBlank()).toString(),
+            "weatherError" to if (weatherFailed) weather else "",
+            "weatherLoading" to (weatherJob?.isActive == true).toString(),
         )
     }
 
@@ -139,36 +143,34 @@ constructor(
      * and on the minute; only while the screen collects them.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val statusLines: StateFlow<List<String>> =
+    val statusLines: StateFlow<List<StatusRow>> =
         settings
             .map { it[Settings.statusLines] }
             .distinctUntilChanged()
-            .flatMapLatest { format ->
-                if (format.isBlank()) flowOf(emptyList())
-                else
-                    flow {
-                        while (true) {
-                            val now = java.time.ZonedDateTime.now()
-                            // A value that cannot be read leaves the lines as they were rather
-                            // than ending them (or the app).
-                            val values =
-                                try {
-                                    statusValues(format, settings.value)
-                                } catch (e: Exception) {
-                                    if (e is CancellationException) throw e
-                                    null
-                                }
-                            if (values != null)
-                                emit(StatusLines.render(format, values, now, java.util.Locale.getDefault()))
-                            val millis = System.currentTimeMillis()
-                            delay(
-                                if (StatusLines.showsSeconds(format)) 1000 - millis % 1000
-                                else minOf(10_000L, 60_000 - millis % 60_000)
-                            )
-                        }
-                    }
-            }
+            .flatMapLatest(::statusPreview)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Also used by the editor: live values without saving the draft or requesting permissions. */
+    fun statusPreview(format: String): Flow<List<StatusRow>> =
+        if (format.isBlank()) flowOf(emptyList())
+        else flow {
+            while (true) {
+                val now = java.time.ZonedDateTime.now()
+                val values = try {
+                    statusValues(format, settings.value)
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    null
+                }
+                if (values != null)
+                    emit(StatusLines.rows(format, values, now, java.util.Locale.getDefault()))
+                val millis = System.currentTimeMillis()
+                delay(
+                    if (StatusLines.showsSeconds(format)) 1000 - millis % 1000
+                    else minOf(10_000L, 60_000 - millis % 60_000)
+                )
+            }
+        }
 
     fun showError(text: String) = banner.show(text)
 
@@ -193,7 +195,7 @@ constructor(
 
     fun openSetting(key: String) {
         navigate(settingsRoute(key))
-        settingsTarget.value = key
+        settingsTarget.value = settingsEditorKey(key)
     }
 
     /** True until the getting started screen has been closed once. */

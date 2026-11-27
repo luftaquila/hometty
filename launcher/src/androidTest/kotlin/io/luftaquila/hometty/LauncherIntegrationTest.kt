@@ -1271,9 +1271,152 @@ class LauncherIntegrationTest {
             val terminal = compose.onNodeWithTag("terminalSurface").fetchSemanticsNode().boundsInRoot
             assertTrue("$status over $terminal", status.bottom <= terminal.top)
         } finally {
-            storage.reset("terminal.statusLines")
+            storage.set("terminal.statusLines", "")
         }
         compose.waitUntil(5000) { compose.onAllNodesWithTag("statusLines").fetchSemanticsNodes().isEmpty() }
+    }
+
+    @Test
+    fun statusChargingFollowsTheBatteryStatus(): Unit = runBlocking {
+        // Simulate battery states only on the emulator, never on someone's phone.
+        Assume.assumeTrue(android.os.Build.MODEL.startsWith("sdk_gphone"))
+        homeTerminal()
+        try {
+            shell("cmd battery unplug")
+            shell("cmd battery set status 3")
+            shell("cmd battery set level 60")
+            storage.set("terminal.statusLines", "{time:HH:mm:ss} {battery}{charging:+}|{charging}|{if charging && exists(batteryPercent)}{color:#50FA7B}⚡{/color}{else}{if !charging}battery{end}{end}")
+            fun expect(charging: Boolean) {
+                val suffix = if (charging)
+                    "%+|${context.getString(TextR.string.status_charging)}|⚡"
+                else "%||battery"
+                compose.waitUntil(5000) {
+                    compose.onAllNodesWithTag("statusLines").fetchSemanticsNodes().any { node ->
+                        node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+                            ?.joinToString("") { it.text }?.endsWith(suffix) == true
+                    }
+                }
+            }
+            expect(false)
+            shell("cmd battery set ac 1")
+            shell("cmd battery set status 2")
+            expect(true)
+            shell("cmd battery set status 4")
+            expect(false)
+            shell("cmd battery set status 5")
+            expect(true)
+            shell("cmd battery unplug")
+            shell("cmd battery set status 3")
+            expect(false)
+        } finally {
+            shell("cmd battery reset")
+        }
+    }
+
+    @Test
+    fun statusOverflowControlsHeightWithoutLosingTemplate(): Unit = runBlocking {
+        homeTerminal()
+        val original = "a long custom status value ".repeat(5) + "{right}78%"
+        fun appearance(mode: String) = io.luftaquila.hometty.core.StatusAppearance(
+            text = io.luftaquila.hometty.core.StatusTextStyle(fontSize = 16, overflow = mode),
+        ).encode()
+        storage.update(mapOf("terminal.statusLines" to original, "terminal.statusAppearance" to appearance("clip")))
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("statusLines").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        val clipped = compose.onNodeWithTag("statusLines").fetchSemanticsNode().boundsInRoot.height
+        storage.set("terminal.statusAppearance", appearance("wrap"))
+        compose.waitUntil(5000) {
+            compose.onNodeWithTag("statusLines").fetchSemanticsNode().boundsInRoot.height > clipped * 2
+        }
+        storage.set("terminal.statusAppearance", appearance("ellipsis"))
+        compose.waitUntil(5000) {
+            compose.onNodeWithTag("statusLines").fetchSemanticsNode().boundsInRoot.height == clipped
+        }
+        assertEquals(original, storage.snapshot().string("terminal.statusLines"))
+        val status = compose.onNodeWithTag("statusLines").fetchSemanticsNode().boundsInRoot
+        val terminal = compose.onNodeWithTag("terminalSurface").fetchSemanticsNode().boundsInRoot
+        assertTrue(status.bottom <= terminal.top)
+    }
+
+    @Test
+    fun statusEditorCancelPreservesTextAndAppearance(): Unit = runBlocking {
+        val original = "first {battery}\n\nlast {time}"
+        val originalStyle = io.luftaquila.hometty.core.StatusAppearance(padding = 12).encode()
+        storage.update(mapOf("terminal.statusLines" to original, "terminal.statusAppearance" to originalStyle))
+        val model = model
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("terminal")) }
+        compose.onNodeWithTag("settingsList").performScrollToNode(hasTestTag("setting:terminal.statusLines"))
+        compose.onNodeWithTag("setting:terminal.statusLines").performClick()
+        val field = compose.onNodeWithTag("statusFormat")
+        field.assert(hasText(original))
+        field.performTextReplacement("AB")
+        field.performTextInputSelection(androidx.compose.ui.text.TextRange(1))
+        compose.onNodeWithTag("placeholder:{right}").performScrollTo().performClick()
+        field.performScrollTo().assert(hasText("A{right}B"))
+        compose.onNodeWithTag("placeholder:{charging:+}").performScrollTo().performClick()
+        field.performScrollTo().assert(hasText("A{right}{charging:+}B"))
+        field.performTextReplacement("")
+        compose.onNodeWithTag("statusInsertCondition").assertDoesNotExist()
+        compose.onNodeWithTag("statusConditionsToggle").performScrollTo().performClick()
+        compose.onNodeWithTag("statusInsertCondition").performScrollTo().performClick()
+        field.performScrollTo().assert(hasText("{if charging}+{else}-{end}"))
+        compose.onNodeWithTag("statusConditionsToggle").performScrollTo().performClick()
+        compose.onNodeWithTag("statusInsertCondition").assertDoesNotExist()
+        field.performScrollTo()
+        field.performTextReplacement("{if batteryPercent <}invalid{end}")
+        compose.onNodeWithTag("statusSave").assertIsNotEnabled()
+        field.performScrollTo().performTextReplacement("draft {time}{right}{battery}\nmy {network}")
+        // The real preview resolves the draft without changing saved content.
+        compose.waitUntil(5000) {
+            compose.onAllNodes(hasText("draft", substring = true) and !hasSetTextAction())
+                .fetchSemanticsNodes().any {
+                    val text = it.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+                        ?.joinToString("") { value -> value.text }.orEmpty()
+                    "{time}" !in text && "%" in text
+                }
+        }
+        assertEquals(original, storage.snapshot().string("terminal.statusLines"))
+        compose.onNodeWithTag("statusTextColor").performScrollTo().performTextReplacement("#oops")
+        compose.onNodeWithTag("statusSave").assertIsNotEnabled()
+        compose.onNodeWithTag("statusCancel").performClick()
+        assertEquals(original, storage.snapshot().string("terminal.statusLines"))
+        assertEquals(originalStyle, storage.snapshot().string("terminal.statusAppearance"))
+    }
+
+    @Test
+    fun statusEditorSavesPerLineStylesAndResetKeepsContent(): Unit = runBlocking {
+        val original = "my {time}{right}{battery}\nnotes stay mine"
+        storage.update(mapOf("terminal.statusLines" to original, "terminal.statusAppearance" to "{}"))
+        val model = model
+        compose.runOnUiThread { model.navigate(Route.SettingsPage("terminal")) }
+        fun openEditor() {
+            compose.onNodeWithTag("settingsList").performScrollToNode(hasTestTag("setting:terminal.statusLines"))
+            compose.onNodeWithTag("setting:terminal.statusAppearance").assertDoesNotExist()
+            compose.onNodeWithTag("setting:terminal.statusLines").performClick()
+        }
+        openEditor()
+        // The caret starts at the end: the second source line is selected.
+        compose.onNodeWithTag("statusStyleTarget").performScrollTo().performClick()
+        compose.onNodeWithTag("statusStyleTarget:line").performClick()
+        compose.onNodeWithTag("statusTextColor").performScrollTo().performTextReplacement("#8BE9FD")
+        compose.onNodeWithTag("statusAlignment").performScrollTo().performClick()
+        compose.onNodeWithTag("statusAlignment:right").performClick()
+        compose.onNodeWithTag("statusOverflow").performScrollTo().performClick()
+        compose.onNodeWithTag("statusOverflow:wrap").performClick()
+        compose.onNodeWithTag("statusSave").performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("statusFormat").fetchSemanticsNodes().isEmpty() }
+        val saved = io.luftaquila.hometty.core.StatusAppearance.decode(storage.snapshot().string("terminal.statusAppearance"))
+        assertEquals(original, storage.snapshot().string("terminal.statusLines"))
+        assertEquals(io.luftaquila.hometty.core.StatusTextStyle(), saved.text)
+        assertEquals(io.luftaquila.hometty.core.StatusTextStyle(color = "#8BE9FD", alignment = "right", overflow = "wrap"), saved.lines[1])
+        openEditor()
+        compose.onNodeWithTag("statusFormat").assert(hasText(original))
+        compose.onNodeWithTag("statusResetAppearance").performScrollTo().performClick()
+        compose.onNodeWithTag("statusFormat").performScrollTo().assert(hasText(original))
+        compose.onNodeWithTag("statusSave").performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("statusFormat").fetchSemanticsNodes().isEmpty() }
+        assertEquals(original, storage.snapshot().string("terminal.statusLines"))
+        assertEquals(io.luftaquila.hometty.core.StatusDefaults.appearance, io.luftaquila.hometty.core.StatusAppearance.decode(storage.snapshot().string("terminal.statusAppearance")))
     }
 
     @Test

@@ -40,6 +40,9 @@ data class SettingDefinition(
         if (min != null) requireMessage(value.toInt() >= min, "error_minimum", min)
         if (max != null) requireMessage(value.toInt() <= max, "error_maximum", max)
         if (step != null) requireMessage((value.toInt() - (min ?: 0)) % step == 0, "error_step", step)
+        if (key == "terminal.statusAppearance")
+            requireMessage(runCatching { StatusAppearance.decode(value) }.isSuccess, "error_status_appearance")
+        if (key == "terminal.statusLines") StatusLines.validate(value)
         return value
     }
 }
@@ -181,7 +184,8 @@ object Settings {
             listOf("duckduckgo", "google", "youtube"),
         )
     /** Lines fixed above the terminal, with placeholders (see [StatusLines]); empty: none. */
-    val statusLines = text("terminal.statusLines", "label_set_status_lines", "")
+    val statusLines = text("terminal.statusLines", "label_set_status_lines", StatusDefaults.lines)
+    val statusAppearance = text("terminal.statusAppearance", "label_set_status_appearance", StatusDefaults.appearance.encode())
     val maxLines =
         number("terminal.maxLines", "label_set_max_lines", 10000, 1000, 50000, step = 1000)
     val clearOnLock =
@@ -222,8 +226,8 @@ object Settings {
 
     val all: List<SettingDefinition> = definitions.toList()
 
-    /** Font and theme preset are chosen on their own screens, not in the generic setting rows. */
-    val terminalUi = all.filter { it.key !in setOf(customFont.key, font.key, theme.key) }
+    /** Font/theme have their own screens; status appearance shares the status-lines editor. */
+    val terminalUi = all.filter { it.key !in setOf(customFont.key, font.key, theme.key, statusAppearance.key) }
 
     /** The switch a setting only matters behind: opacity needs the wallpaper, and so on. */
     fun gate(definition: SettingDefinition): BooleanSetting? =
@@ -246,7 +250,7 @@ object Settings {
             (gate(definition)?.let { snapshot[it] } ?: true) &&
                 when (definition.key) {
                     units.key, weatherFormat.key -> weatherOn
-                    weatherInterval.key -> weatherOn && "{weather}" in snapshot[statusLines]
+                    weatherInterval.key -> weatherOn && StatusLines.usesWeather(snapshot[statusLines])
                     else -> true
                 }
         }

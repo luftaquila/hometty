@@ -8,6 +8,10 @@ import android.content.Context
 object TextResources {
     val ids: Map<String, Int> =
         mapOf(
+            "error_status_format" to R.string.error_status_format,
+            "label_set_status_appearance" to R.string.label_set_status_appearance,
+            "label_set_status_appearance_desc" to R.string.label_set_status_appearance_desc,
+            "error_status_appearance" to R.string.error_status_appearance,
             "error_entry_name" to R.string.error_entry_name,
             "error_https_url" to R.string.error_https_url,
             "error_field_boolean" to R.string.error_field_boolean,

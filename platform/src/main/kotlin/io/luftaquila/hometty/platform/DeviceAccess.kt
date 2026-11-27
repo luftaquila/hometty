@@ -411,7 +411,10 @@ class DeviceAccess(private val context: Context) {
             .vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-    fun status(): Map<String, String> {
+    fun status(): Map<String, String> = statusValues(includeRaw = false)
+
+    /** Unrounded, locale-independent values for user-defined status conditions. */
+    fun statusValues(includeRaw: Boolean = true): Map<String, String> {
         val battery =
             context
                 .getSystemService(BatteryManager::class.java)
@@ -432,17 +435,39 @@ class DeviceAccess(private val context: Context) {
             }
         val storage = StatFs(context.filesDir.path)
         fun gib(bytes: Long) = "%.1f GB".format(bytes / 1073741824.0)
-        return mapOf(
+        val display = mapOf(
             "battery" to (if (battery in 0..100) "$battery%" else "unknown"),
             "memory" to "${gib(memory.availMem)}/${gib(memory.totalMem)}",
             "storage" to "${gib(storage.availableBytes)}/${gib(storage.totalBytes)}",
             "network" to networkText,
             "device" to Build.MODEL,
         )
+        if (!includeRaw) return display
+        return display + buildMap {
+            if (battery in 0..100) put("batteryPercent", battery.toString())
+            put("memoryFreeBytes", memory.availMem.toString())
+            put("memoryTotalBytes", memory.totalMem.toString())
+            put("memoryFreeGiB", (memory.availMem / 1073741824.0).toString())
+            put("memoryTotalGiB", (memory.totalMem / 1073741824.0).toString())
+            if (memory.totalMem > 0) put("memoryUsedPercent", (100.0 * (1 - memory.availMem.toDouble() / memory.totalMem)).toString())
+            put("storageFreeBytes", storage.availableBytes.toString())
+            put("storageTotalBytes", storage.totalBytes.toString())
+            put("storageFreeGiB", (storage.availableBytes / 1073741824.0).toString())
+            put("storageTotalGiB", (storage.totalBytes / 1073741824.0).toString())
+            if (storage.totalBytes > 0) put("storageUsedPercent", (100.0 * (1 - storage.availableBytes.toDouble() / storage.totalBytes)).toString())
+            put("networkConnected", (network != null).toString())
+        }
     }
 
-    /** Whether the battery is charging. */
-    fun charging(): Boolean = context.getSystemService(BatteryManager::class.java).isCharging
+    /** The current battery status, rather than BatteryStats' delayed charge-rate estimate. */
+    fun charging(): Boolean {
+        val battery = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        return when (battery?.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)) {
+            BatteryManager.BATTERY_STATUS_CHARGING, BatteryManager.BATTERY_STATUS_FULL -> true
+            BatteryManager.BATTERY_STATUS_DISCHARGING, BatteryManager.BATTERY_STATUS_NOT_CHARGING -> false
+            else -> context.getSystemService(BatteryManager::class.java).isCharging
+        }
+    }
 
     suspend fun location(): String =
         coordinates().let {

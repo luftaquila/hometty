@@ -196,12 +196,18 @@ fun settingsSection(category: String): SettingsSection? =
             section.keys.any { it.substringBefore('.') == category }
         }
 
+/** Backing settings with a shared editor have only one entry in the settings UI. */
+fun settingsEditorKey(key: String): String =
+    if (key == Settings.statusAppearance.key) Settings.statusLines.key else key
+
 /** Where a setting is edited: its page, or the color page for colors. */
-fun settingsRoute(key: String): Route.SettingsPage =
-    Route.SettingsPage(
+fun settingsRoute(settingKey: String): Route.SettingsPage {
+    val key = settingsEditorKey(settingKey)
+    return Route.SettingsPage(
         if (Settings.byKey[key]?.kind == SettingKind.COLOR) "colors"
         else settingsSections.first { key in it.keys }.id
     )
+}
 
 private fun settingValue(
     context: Context,
@@ -371,7 +377,11 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
                 }
                 changed -> {
                     val definitions =
-                        Settings.terminalUi.filter { settings.string(it.key) != it.default }
+                        Settings.terminalUi.filter {
+                            settings.string(it.key) != it.default ||
+                                (it.key == Settings.statusLines.key &&
+                                    StatusAppearance.decode(settings[Settings.statusAppearance]) != StatusDefaults.appearance)
+                        }
                     val font = settings[Settings.font]
                     val theme = Themes.base(settings)
                     val defaultTheme = Settings.byKey.getValue(Settings.theme.key).default
@@ -424,7 +434,12 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
                             trailing = {
                                 TextButton(
                                     onClick = {
-                                        model.resetSetting(definition.key)
+                                        if (definition.key == Settings.statusLines.key)
+                                            model.updateSettings(mapOf(
+                                                Settings.statusLines.key to Settings.statusLines.definition.default,
+                                                Settings.statusAppearance.key to Settings.statusAppearance.definition.default,
+                                            ))
+                                        else model.resetSetting(definition.key)
                                     }
                                 ) {
                                     Text(context.getString(TextR.string.settings_restore_default))
@@ -498,6 +513,8 @@ fun SettingsScreen(model: HomeViewModel, category: String) {
             }
         else if (key == Settings.weatherProvider.key)
             WeatherProviderDialog(model, settings) { editingKey = null }
+        else if (key == Settings.statusLines.key || key == Settings.statusAppearance.key)
+            StatusLinesDialog(model, settings) { editingKey = null }
         else SettingDialog(
             definition,
             settings,

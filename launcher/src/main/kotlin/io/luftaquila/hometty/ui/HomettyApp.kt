@@ -268,22 +268,13 @@ private fun HomeScreen(
     val status by model.statusLines.collectAsStateWithLifecycle()
     val statusFont = remember(terminalFont) { FontFamily(terminalFont) }
     Column(Modifier.fillMaxSize()) {
-        // Like T-UI's status lines: fixed above the terminal, one row each, in its
-        // font and in the dimmer color notification times use. Hidden with the terminal, it keeps
-        // its room so the terminal grid does not change.
         if (status.isNotEmpty())
-            Text(
-                status.joinToString("\n"),
-                Modifier.fillMaxWidth()
-                    .padding(start = 8.dp, top = 4.dp, end = 8.dp)
-                    .alpha(if (shown) 1f else 0f)
-                    .testTag("statusLines"),
-                color = Color(android.graphics.Color.parseColor(NotificationLines.timeColor(settings))),
-                fontFamily = statusFont,
-                fontSize = settings[Settings.fontSize].sp,
-                softWrap = false,
-                maxLines = status.size,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+            StatusLinesView(
+                status,
+                io.luftaquila.hometty.core.StatusAppearance.decode(settings[Settings.statusAppearance]),
+                settings,
+                statusFont,
+                Modifier.alpha(if (shown) 1f else 0f).testTag("statusLines"),
             )
         AndroidView(
             factory = { context ->

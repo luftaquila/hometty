@@ -13,7 +13,8 @@ class EngineTest {
         assertFalse(Settings.weatherInterval.key in off)
         assertTrue(Settings.weatherProvider.key in off)
         // The interval only matters when the status lines show the weather.
-        assertFalse(Settings.weatherInterval.key in visible())
+        assertTrue(Settings.weatherInterval.key in visible())
+        assertFalse(Settings.weatherInterval.key in visible("terminal.statusLines" to ""))
         assertTrue(Settings.weatherInterval.key in visible("terminal.statusLines" to "{time}\n{weather}"))
         assertTrue(Settings.units.key in visible())
     }

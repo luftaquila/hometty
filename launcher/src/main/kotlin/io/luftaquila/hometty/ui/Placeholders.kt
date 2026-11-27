@@ -54,11 +54,14 @@ object Placeholders {
 
     private val status =
         listOf(
+            "{right}" to TextR.string.placeholder_status_right,
             "{time}" to TextR.string.placeholder_time,
             "{time:HH:mm:ss}" to TextR.string.placeholder_time_pattern,
             "{date}" to TextR.string.placeholder_date,
             "{battery}" to TextR.string.placeholder_battery,
             "{charging}" to TextR.string.placeholder_charging,
+            "{charging:+}" to TextR.string.placeholder_charging_custom,
+            "{charging:+|-}" to TextR.string.placeholder_charging_otherwise,
             "{memory}" to TextR.string.placeholder_memory,
             "{storage}" to TextR.string.placeholder_storage,
             "{network}" to TextR.string.placeholder_network,
@@ -142,8 +145,10 @@ fun PlaceholderList(items: List<Pair<String, Int>>, modifier: Modifier = Modifie
                     .testTag("placeholder:$token"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(token, Modifier.width(120.dp), fontFamily = FontFamily.Monospace)
-                Text(context.getString(meaning), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(token, Modifier.width(140.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.width(8.dp))
+                Text(context.getString(meaning), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
