@@ -85,11 +85,12 @@ constructor(
     private var weatherFailed = false
     private var weatherJob: Job? = null
 
-    /** Asks for the weather again after 30 minutes, or 5 after a failure. */
-    private fun refreshWeather() {
+    /** Asks for the weather again after the set interval, or 5 minutes after a failure. */
+    private fun refreshWeather(snapshot: SettingsSnapshot) {
         val age = android.os.SystemClock.elapsedRealtime() - weatherAt
         if (weatherJob?.isActive == true) return
-        if (weatherAt != 0L && age < (if (weatherFailed) 5 else 30) * 60_000L) return
+        val minutes = if (weatherFailed) 5 else snapshot[Settings.weatherInterval]
+        if (weatherAt != 0L && age < minutes * 60_000L) return
         weatherAt = android.os.SystemClock.elapsedRealtime()
         weatherJob =
             viewModelScope.launch {
@@ -107,7 +108,15 @@ constructor(
     }
 
     private suspend fun statusValues(format: String, snapshot: SettingsSnapshot): Map<String, String> {
-        if ("{weather}" in format) refreshWeather()
+        if ("{weather}" in format) {
+            if (snapshot[Settings.weatherProvider] != "off") refreshWeather(snapshot)
+            else {
+                // Off: nothing is fetched, and turning it on again fetches at once.
+                weatherJob?.cancel()
+                weather = ""
+                weatherAt = 0L
+            }
+        }
         // System services and the file system: off the main thread, which draws every second.
         val (status, charging) = withContext(Dispatchers.Default) { device.status() to device.charging() }
         return status + mapOf(

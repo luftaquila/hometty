@@ -5,6 +5,20 @@ import org.junit.Test
 
 class EngineTest {
     @Test
+    fun weatherSettingsShowOnlyWhileTheWeatherIsOn() {
+        fun visible(vararg values: Pair<String, String>) =
+            Settings.visibleSettings(SettingsSnapshot(values = mapOf(*values))).map { it.key }
+        val off = visible("weather.provider" to "off", "terminal.statusLines" to "{weather}")
+        assertFalse(Settings.units.key in off)
+        assertFalse(Settings.weatherInterval.key in off)
+        assertTrue(Settings.weatherProvider.key in off)
+        // The interval only matters when the status lines show the weather.
+        assertFalse(Settings.weatherInterval.key in visible())
+        assertTrue(Settings.weatherInterval.key in visible("terminal.statusLines" to "{time}\n{weather}"))
+        assertTrue(Settings.units.key in visible())
+    }
+
+    @Test
     fun appNamesSupportCaseSpacesAndCanonicalKorean() {
         assertEquals(AppNames.key("Google Maps"), AppNames.key("googlemaps"))
         assertEquals(

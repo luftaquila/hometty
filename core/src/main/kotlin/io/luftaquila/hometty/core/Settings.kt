@@ -207,9 +207,12 @@ object Settings {
         bool("rss.enabled", "label_set_rss_enabled", false)
     val rssShowUpdates =
         bool("rss.showUpdates", "label_set_rss_show_updates", true)
-    /** wttr.in needs no account; OpenWeather needs an API key. */
+    /** wttr.in needs no account; OpenWeather needs an API key; off fetches no weather at all. */
     val weatherProvider =
-        choice("weather.provider", "label_set_weather_provider", "wttr", listOf("wttr", "openweather"))
+        choice("weather.provider", "label_set_weather_provider", "wttr", listOf("off", "wttr", "openweather"))
+    /** How often the status lines fetch the weather again. */
+    val weatherInterval =
+        number("weather.intervalMinutes", "label_set_weather_interval", 30, 15, 360, step = 15)
     val units =
         choice("weather.units", "label_set_units", "metric", listOf("metric", "imperial", "standard"))
     val historyEnabled =
@@ -233,9 +236,20 @@ object Settings {
             else -> null
         }
 
-    /** The rows to show: settings whose switch is off are hidden. */
+    /**
+     * The rows to show: settings whose switch is off are hidden, and so are the weather settings
+     * with the weather off; the weather interval only matters for {weather} in the status lines.
+     */
     fun visibleSettings(snapshot: SettingsSnapshot): List<SettingDefinition> =
-        terminalUi.filter { definition -> gate(definition)?.let { snapshot[it] } ?: true }
+        terminalUi.filter { definition ->
+            val weatherOn = snapshot[weatherProvider] != "off"
+            (gate(definition)?.let { snapshot[it] } ?: true) &&
+                when (definition.key) {
+                    units.key, weatherFormat.key -> weatherOn
+                    weatherInterval.key -> weatherOn && "{weather}" in snapshot[statusLines]
+                    else -> true
+                }
+        }
 
     val byKey = all.associateBy { it.key }
 }

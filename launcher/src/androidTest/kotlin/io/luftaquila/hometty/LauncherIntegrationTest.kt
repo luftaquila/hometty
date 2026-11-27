@@ -829,6 +829,18 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun weatherOffOnlySaysSo(): Unit = runBlocking {
+        storage.set("weather.provider", "off")
+        val terminal = homeTerminal()
+        val session = requireNotNull(terminal.session)
+        val result = File(context.filesDir, "home/weather.txt").apply { delete() }
+        val message = context.getString(TextR.string.message_weather_off)
+        withTimeout(5000) { session.atPrompt.first { it } }
+        session.write("weather > \$HOMETTY_DATA/weather.txt 2>&1\n")
+        waitFor("the weather-off message", session) { result.exists() && message in result.readText() }
+    }
+
+    @Test
     fun calcTakesAStarWithoutQuotesAndParenthesesOnItsOwnLines(): Unit = runBlocking {
         val terminal = homeTerminal()
         val session = requireNotNull(terminal.session)

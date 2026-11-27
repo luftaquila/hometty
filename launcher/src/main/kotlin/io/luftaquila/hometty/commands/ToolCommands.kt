@@ -3,6 +3,7 @@ package io.luftaquila.hometty.commands
 import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.core.Commands
 import io.luftaquila.hometty.core.EntryStore
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.StateNames
 import io.luftaquila.hometty.core.StateStore
 import io.luftaquila.hometty.data.Secrets
@@ -44,6 +45,9 @@ constructor(
                     secrets.get().set("weatherKey", operand())
                     out("Weather key saved")
                 } else {
+                    require(settings[Settings.weatherProvider] != "off") {
+                        string(TextR.string.message_weather_off)
+                    }
                     val here = device.get().coordinates()
                     // The providers name the nearest village, not the city.
                     out(network.get().weather(here.latitude, here.longitude, device.get().place(here)))

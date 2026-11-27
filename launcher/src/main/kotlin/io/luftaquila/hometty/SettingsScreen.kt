@@ -158,6 +158,7 @@ val settingsSections =
                         Settings.weatherProvider.key,
                         Settings.units.key,
                         Settings.weatherFormat.key,
+                        Settings.weatherInterval.key,
                     ),
                 ),
             ),
@@ -638,9 +639,10 @@ private fun GroupLinksAfter(
         "notes" -> manager("note")
         "rss" -> manager("rss")
         "weather" ->
-            SettingsLink(context.getString(TextR.string.label_test_weather)) {
-                model.runInDialog("weather")
-            }
+            if (settings[Settings.weatherProvider] != "off")
+                SettingsLink(context.getString(TextR.string.label_test_weather)) {
+                    model.runInDialog("weather")
+                }
         "backup" ->
             SettingsLink(
                 context.getString(TextR.string.label_backup_restore),
