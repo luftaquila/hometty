@@ -77,6 +77,7 @@ class TerminalSession(
     val atPrompt = MutableStateFlow(false)
     val inputPending = MutableStateFlow(false)
     private var promptScan = ""
+    private var markRemainder = byteArrayOf()
     /** A notice to print, with the id a tap on it reports (null: none). */
     private class Notice(val text: String, val id: Long?)
 
@@ -144,6 +145,7 @@ class TerminalSession(
                     put("ENV", rc.absolutePath)
                     put("TMPDIR", context.cacheDir.absolutePath)
                     put("LANG", "C.UTF-8")
+                    if (interactiveAsh) put("HOMETTY_SHELL_MARKS", "1")
                     putAll(extraEnvironment)
                 }
                 .map { "${it.key}=${it.value}" }
@@ -243,7 +245,6 @@ class TerminalSession(
     fun write(text: String) {
         if (deferred { write(text) }) return
         inputPending.value = true
-        if (text.contains('\n') && atPrompt.value) synchronized(monitor) { enterPending = true }
         if (text.contains('\n') || text.contains('\r') || text.contains('\u0003')) leavePrompt()
         check(writes.trySend(text.toByteArray()).isSuccess) {
             "Terminal has exited or input queue is full"
@@ -265,7 +266,6 @@ class TerminalSession(
         if (deferred { key(code, modifiers) }) return
         synchronized(monitor) {
             inputPending.value = true
-            if (code == 1 && atPrompt.value) enterPending = true
             if (code == 1) leavePrompt()
             if (pointer != 0L && _exit.value == null)
                 writes.trySend(Native.key(pointer, code, modifiers))
@@ -382,23 +382,29 @@ class TerminalSession(
     /** Where the prompt ended: absolute line and column of the first input cell. */
     private var inputStart: Pair<Long, Int>? = null
 
-    /** Set by Enter at the prompt; the shell's next newline ends the echoed command line. */
-    private var enterPending = false
-
     /**
      * Feeds output, noting where each prompt starts (OSC 133;A) and the cursor right after each
-     * prompt-end mark (OSC 133;B) in PS1, and reading the entered command just before the shell
-     * echoes Enter: only then is all of the typed text, sent ahead of Enter, on screen. Waiting
-     * notices are printed just before a new prompt.
+     * prompt-end mark (OSC 133;B) in PS1. BusyBox emits OSC 133;C after drawing the complete
+     * input and before echoing Enter; its other newlines may just wrap a long input line.
+     * Waiting notices are printed just before a new prompt.
      */
-    private fun feedMarkingInput(bytes: ByteArray) {
+    private fun feedMarkingInput(output: ByteArray) {
+        val combined = markRemainder + output
+        // A PTY read can end in the middle of any mark. Keep that suffix for the next read.
+        val keep = (1 until INPUT_MARK.size).lastOrNull { size ->
+            size <= combined.size && listOf(INPUT_MARK, PROMPT_MARK, COMMAND_MARK).any { mark ->
+                (0 until size).all { combined[combined.size - size + it] == mark[it] }
+            }
+        } ?: 0
+        val bytes = combined.copyOf(combined.size - keep)
+        markRemainder = combined.copyOfRange(bytes.size, combined.size)
         var from = 0
         while (from < bytes.size) {
             val mark = indexOf(bytes, INPUT_MARK, from)
-            val newline = if (enterPending) indexOf(bytes, NEWLINE, from) else -1
+            val command = indexOf(bytes, COMMAND_MARK, from)
             val prompt = indexOf(bytes, PROMPT_MARK, from)
             when {
-                prompt >= 0 && (mark < 0 || prompt < mark) && (newline < 0 || prompt < newline) -> {
+                prompt >= 0 && (mark < 0 || prompt < mark) && (command < 0 || prompt < command) -> {
                     Native.feed(pointer, bytes.copyOfRange(from, prompt))
                     // Notices that came while a command ran go just before the next prompt.
                     if (!atPrompt.value && notices.isNotEmpty()) {
@@ -411,11 +417,11 @@ class TerminalSession(
                     promptStart = (p[2] + p[0]) to p[1].toInt()
                     from = prompt + PROMPT_MARK.size
                 }
-                newline >= 0 && (mark < 0 || newline < mark) -> {
-                    Native.feed(pointer, bytes.copyOfRange(from, newline))
-                    enterPending = false
+                command >= 0 && (mark < 0 || command < mark) -> {
+                    Native.feed(pointer, bytes.copyOfRange(from, command))
                     captureEntered()
-                    from = newline
+                    Native.feed(pointer, COMMAND_MARK)
+                    from = command + COMMAND_MARK.size
                 }
                 mark >= 0 -> {
                     Native.feed(pointer, bytes.copyOfRange(from, mark + INPUT_MARK.size))
@@ -451,13 +457,23 @@ class TerminalSession(
         val (row, column) = inputStart ?: return
         inputStart = null
         val p = Native.position(pointer)
-        val endRow = maxOf(row, p[2] + p[0])
-        val command =
-            buildString { for (r in row..endRow) append(text(r, if (r == row) column else 0) ?: "") }
-                .trim()
+        // An input ending exactly at the right edge has already wrapped to an empty row.
+        val endRow = maxOf(row, p[2] + p[0] - if (p[1] == 0L) 1 else 0)
+        val command = commandText(row, column, endRow).trim()
         if (command.isEmpty()) return
         marks.addLast(CommandMark(row, column, endRow, command))
         while (marks.size > 500) marks.removeFirst()
+    }
+
+    /** Join input rows, preserving actual spaces but skipping empty cells and wide-glyph tails. */
+    private fun commandText(row: Long, column: Int, endRow: Long) = buildString {
+        for (r in row..endRow) {
+            val cells = Native.line(pointer, r) ?: continue
+            for (c in (if (r == row) column else 0) until cells.size) {
+                val cp = cells[c]
+                if (cp > 0 && Character.isValidCodePoint(cp)) appendCodePoint(cp)
+            }
+        }
     }
 
     /**
@@ -469,9 +485,7 @@ class TerminalSession(
             if (pointer == 0L) return null
             val absolute = Native.position(pointer)[2] - scrollback + viewRow
             val mark = marks.lastOrNull { absolute in it.row..it.endRow } ?: return null
-            val shown = buildString {
-                for (r in mark.row..mark.endRow) append(text(r, if (r == mark.row) mark.column else 0) ?: "")
-            }
+            val shown = commandText(mark.row, mark.column, mark.endRow)
             mark.command.takeIf { shown.startsWith(it) }
         }
 
@@ -613,7 +627,7 @@ private val INPUT_MARK = "\u001b]133;B\u0007".toByteArray()
 
 private val PROMPT_MARK = "\u001b]133;A\u0007".toByteArray()
 
-private val NEWLINE = byteArrayOf('\n'.code.toByte())
+private val COMMAND_MARK = "\u001b]133;C\u0007".toByteArray()
 
 private val SGR = Regex("\u001b\\[[0-9;]*m")
 

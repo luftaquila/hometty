@@ -873,6 +873,31 @@ class LauncherIntegrationTest {
     }
 
     @Test
+    fun rerunningAWrappedCommandKeepsEveryRow(): Unit = runBlocking {
+        val result = File(context.filesDir, "home/wrapped-rerun").apply { delete() }
+        val setup = io.luftaquila.hometty.core.ShellPrompt.setup(io.luftaquila.hometty.core.SettingsSnapshot())
+        val session = TerminalSession(context, null, "", 100, setup, deferUntilMeasured = true)
+        try {
+            session.resize(24, 35)
+            withTimeout(5000) { session.atPrompt.first { it } }
+            val command = "printf '%s\\n' WRAPPED_COMMAND_TAIL >> wrapped-rerun"
+            session.write("$command\n")
+            waitFor("the wrapped command", session) { result.exists() && result.readLines().size == 1 }
+            withTimeout(5000) { session.atPrompt.first { it } }
+            val row = visibleText(session).lines().indexOfFirst { "printf" in it }
+            assertTrue(visibleText(session), row >= 0)
+            assertEquals(command, session.commandAt(row, 0))
+            assertEquals(command, session.commandAt(row + 1, 0))
+            session.write("${session.commandAt(row, 0)}\n")
+            waitFor("the complete rerun", session) { result.readLines().size == 2 }
+            assertEquals(listOf("WRAPPED_COMMAND_TAIL", "WRAPPED_COMMAND_TAIL"), result.readLines())
+        } finally {
+            session.close()
+            result.delete()
+        }
+    }
+
+    @Test
     fun aNotificationLineOpensItsNotificationAndCanHideItsApp(): Unit = runBlocking {
         val hub = (context.applicationContext as PlatformDependencies).notifications
         val packageName = "com.android.settings"
@@ -904,7 +929,7 @@ class LauncherIntegrationTest {
         // before it has been handled.
         suspend fun sentinel(text: String) {
             post("hometty-$text", io.luftaquila.hometty.core.NotificationContent("io.luftaquila.hometty.sentinel", "Sentinel", "S", text), false)
-            waitFor("the sentinel $text", session) { lines().any { text in it } }
+            waitFor("the sentinel $text", session) { text in unwrapped(session) }
         }
         session.write("clear\n")
         withTimeout(5000) { session.atPrompt.first { it } }
@@ -1138,7 +1163,7 @@ class LauncherIntegrationTest {
         val session = requireNotNull(terminal.session)
         val result = File(context.filesDir, "home/ct").apply { delete() }
         // A short line: it must not wrap.
-        session.write("cd \"\$HOMETTY_DATA\"\n")
+        session.write("HOME=\"\$HOMETTY_DATA\"; cd\n")
         withTimeout(5000) { session.atPrompt.first { it } }
         session.write("echo bc > ct")
         waitFor("the typed line", session) { visibleText(session).lines().any { "echo bc > ct" in it } }
