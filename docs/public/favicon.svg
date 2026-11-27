@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72">
+  <!-- App launcher artwork, cropped to the adaptive icon's visible area. -->
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#343746"/>
+      <stop offset="1" stop-color="#21222c"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="18" width="72" height="72" rx="16" fill="url(#background)"/>
+  <path d="M37,41L50,54L37,67" fill="none" stroke="#50fa7b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M59.5,62.5h10a3.5,3.5 0,0 1,0 7h-10a3.5,3.5 0,0 1,0 -7z" fill="#bd93f9"/>
+</svg>

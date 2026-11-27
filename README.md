@@ -16,11 +16,11 @@ Inspired by [T-UI Linux CLI Launcher](https://github.com/fandreuz/TUI-ConsoleLau
 
 ## Usage
 
-Install the APK (Android 10+) and set hometty as your home app.
+Install hometty from [Google Play](https://play.google.com/store/apps/details?id=io.luftaquila.hometty) (Android 10+) and set it as your home app.
 
 Type `help` to see the commands and `config` to change settings.
 
-[Privacy policy](https://github.com/luftaquila/hometty/blob/master/docs/privacy.md)
+See the [user guide](https://luftaquila.github.io/hometty/) for setup, commands, and customization.
 
 ```sh
 apps -al
