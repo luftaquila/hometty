@@ -1,22 +1,22 @@
 package io.luftaquila.hometty.commands
 
-import io.luftaquila.hometty.Route
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings as AndroidSettings
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.core.AppNames
 import io.luftaquila.hometty.core.Cli
 import io.luftaquila.hometty.core.CliUsageException
 import io.luftaquila.hometty.core.Commands
 import io.luftaquila.hometty.core.EntryStore
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.Shell
-import io.luftaquila.hometty.AppCatalog
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.platform.DeviceAccess
 import io.luftaquila.hometty.platform.PlatformRequest
+import io.luftaquila.hometty.runtime.AppCatalog
 import javax.inject.Inject
 import javax.inject.Provider
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /** `help` section Apps: apps, alias, unalias, search, open, share. */
 class AppsCommands

@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import android.content.Context
 import androidx.compose.foundation.*
@@ -21,11 +21,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.core.*
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.choiceLabel
 import io.luftaquila.hometty.resources.message
 import io.luftaquila.hometty.resources.text
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.PlaceholderList
+import io.luftaquila.hometty.ui.Placeholders
+import io.luftaquila.hometty.ui.color
+import io.luftaquila.hometty.ui.inserting
+import io.luftaquila.hometty.ui.rememberCursorText
 
 /** A titled block of settings; [id] also selects the links shown around its rows. */
 data class SettingsGroup(val id: String, val title: Int, val keys: List<String> = emptyList())

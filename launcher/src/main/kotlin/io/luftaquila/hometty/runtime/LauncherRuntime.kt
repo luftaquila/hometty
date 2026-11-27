@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.runtime
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -6,11 +6,17 @@ import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.StateNames
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.data.Storage
 import io.luftaquila.hometty.platform.NetworkData
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.message
+import io.luftaquila.hometty.shell.CLEAR_LINE
+import io.luftaquila.hometty.shell.CommandLinks
+import io.luftaquila.hometty.shell.TerminalHost
+import io.luftaquila.hometty.shell.TerminalNotices
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.*
@@ -18,10 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
+import kotlinx.coroutines.flow.map
 
 /**
  * What the launcher does for as long as its process runs, whichever screen is open: starting the

@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,10 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.luftaquila.hometty.core.Fonts
-import io.luftaquila.hometty.resources.R as TextR
-import io.luftaquila.hometty.resources.choiceLabel
 import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.get
+import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.resources.choiceLabel
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.TerminalFonts
 
 /**
  * Font and text size, previewed before saving like the theme screen. The size control sits above

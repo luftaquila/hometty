@@ -15,12 +15,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import io.luftaquila.hometty.core.Settings
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.platform.PlatformRequest
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.message
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.HomettyApp
+import io.luftaquila.hometty.ui.settings.BackupViewModel
+import io.luftaquila.hometty.ui.settings.FeatureModels
+import io.luftaquila.hometty.ui.settings.FontViewModel
 import kotlinx.coroutines.launch
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

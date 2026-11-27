@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -27,13 +27,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
 import io.luftaquila.hometty.core.Themes
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.ui.color
 import kotlin.math.max
 import kotlin.math.min
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /** GUI text stays legible even when a custom terminal palette has low contrast. */
 internal fun readable(foreground: Color, background: Color, minimum: Float = 4.5f): Color {

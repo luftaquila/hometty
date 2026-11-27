@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import android.app.Activity
 import android.content.Context
@@ -15,6 +15,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.luftaquila.hometty.platform.Products
 import io.luftaquila.hometty.platform.Purchases
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
 
 /** Donations through Google Play, with prices from Play, and GitHub Sponsors. */
 @Composable

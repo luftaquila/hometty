@@ -5,9 +5,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.luftaquila.hometty.core.Cli
 import io.luftaquila.hometty.core.EntryStore
 import io.luftaquila.hometty.core.Operand
-import io.luftaquila.hometty.AppCatalog
 import io.luftaquila.hometty.resources.message
 import io.luftaquila.hometty.resources.text
+import io.luftaquila.hometty.runtime.AppCatalog
 import javax.inject.Inject
 import javax.inject.Provider
 

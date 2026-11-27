@@ -1,13 +1,15 @@
 package io.luftaquila.hometty.commands
 
+import io.luftaquila.hometty.BuildConfig
 import io.luftaquila.hometty.core.Cli
 import io.luftaquila.hometty.core.CliUsageException
 import io.luftaquila.hometty.core.CommandNotFoundException
 import io.luftaquila.hometty.core.EntryStore
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsStore
 import io.luftaquila.hometty.core.Shell
-import io.luftaquila.hometty.AppCatalog
-import io.luftaquila.hometty.BuildConfig
+import io.luftaquila.hometty.core.get
+import io.luftaquila.hometty.runtime.AppCatalog
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
@@ -17,8 +19,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /**
  * Runs launcher commands from argv, as the shell passes them: finds the implementation, parses

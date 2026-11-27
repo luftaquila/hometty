@@ -1,12 +1,13 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.shell
 
 import android.content.Context
 import android.system.Os
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.luftaquila.hometty.commands.CommandNames
 import io.luftaquila.hometty.core.AppNames
 import io.luftaquila.hometty.core.Commands
 import io.luftaquila.hometty.core.EntryStore
-import io.luftaquila.hometty.commands.CommandNames
+import io.luftaquila.hometty.runtime.AppCatalog
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton

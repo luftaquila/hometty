@@ -1,9 +1,10 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui
 
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.fonts.Font
 import android.graphics.fonts.FontFamily
+import io.luftaquila.hometty.R
 import io.luftaquila.hometty.core.Fonts
 import java.io.File
 

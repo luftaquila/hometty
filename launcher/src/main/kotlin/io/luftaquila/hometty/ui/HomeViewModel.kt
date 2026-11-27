@@ -1,16 +1,24 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui
 
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.luftaquila.hometty.core.*
-import io.luftaquila.hometty.data.*
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.commands.CommandEvent
 import io.luftaquila.hometty.commands.LauncherEngine
+import io.luftaquila.hometty.core.*
+import io.luftaquila.hometty.data.*
 import io.luftaquila.hometty.platform.*
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.message
+import io.luftaquila.hometty.runtime.AppCatalog
+import io.luftaquila.hometty.runtime.ErrorBanner
+import io.luftaquila.hometty.runtime.LauncherRuntime
+import io.luftaquila.hometty.shell.CLEAR_LINE
+import io.luftaquila.hometty.shell.TerminalHost
+import io.luftaquila.hometty.shell.TerminalNotices
+import io.luftaquila.hometty.ui.settings.settingsRoute
 import javax.inject.Inject
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

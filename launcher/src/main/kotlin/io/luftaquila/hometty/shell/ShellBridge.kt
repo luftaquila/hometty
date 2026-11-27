@@ -1,14 +1,17 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.shell
 
 import android.content.Context
 import android.net.LocalServerSocket
 import android.net.LocalSocket
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.luftaquila.hometty.core.CliUsageException
-import io.luftaquila.hometty.core.SettingsStore
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.commands.CommandEvent
 import io.luftaquila.hometty.commands.Completion
 import io.luftaquila.hometty.commands.LauncherEngine
+import io.luftaquila.hometty.core.CliUsageException
+import io.luftaquila.hometty.core.Settings
+import io.luftaquila.hometty.core.SettingsStore
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.resources.R as TextR
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -21,8 +24,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /**
  * The launcher end of the CLI: the shell runs the APK's CLI through its normal PATH, and the CLI

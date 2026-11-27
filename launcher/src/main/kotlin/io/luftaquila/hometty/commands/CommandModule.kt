@@ -6,7 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
-import io.luftaquila.hometty.CommandLinks
+import io.luftaquila.hometty.shell.CommandLinks
 import javax.inject.Singleton
 
 @Module

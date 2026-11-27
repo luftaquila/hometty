@@ -1,17 +1,23 @@
 package io.luftaquila.hometty
 
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.compose.ui.semantics.getOrNull
 import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.platform.PlatformDependencies
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.message
 import io.luftaquila.hometty.resources.text
+import io.luftaquila.hometty.shell.sharedStorage
 import io.luftaquila.hometty.terminal.TerminalSession
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.color
+import io.luftaquila.hometty.ui.settings.LICENSES
+import io.luftaquila.hometty.ui.settings.settingsColors
+import io.luftaquila.hometty.ui.settings.settingsSection
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File

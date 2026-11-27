@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -19,12 +19,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
 import io.luftaquila.hometty.core.Themes
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.choiceLabel
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.TerminalFonts
+import io.luftaquila.hometty.ui.color
 
 @Composable
 fun ThemeScreen(model: HomeViewModel) {

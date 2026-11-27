@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -15,8 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -25,10 +25,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.core.*
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.message
 import io.luftaquila.hometty.resources.text
+import io.luftaquila.hometty.shell.TerminalNotices
+import io.luftaquila.hometty.ui.settings.ColorSwatches
+import io.luftaquila.hometty.ui.settings.PreferenceRow
+import io.luftaquila.hometty.ui.settings.SectionLabel
+import io.luftaquila.hometty.ui.settings.SettingsGlyph
+import io.luftaquila.hometty.ui.settings.SettingsIcon
+import io.luftaquila.hometty.ui.settings.SettingsLink
+import io.luftaquila.hometty.ui.settings.SettingsSearch
+import io.luftaquila.hometty.ui.settings.TogglePreference
+import io.luftaquila.hometty.ui.settings.promptPreview
 import kotlinx.coroutines.launch
 
 @Composable

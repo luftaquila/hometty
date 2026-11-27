@@ -1,8 +1,11 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.shell
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.luftaquila.hometty.BuildConfig
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.terminal.TerminalSession
 import java.io.File
@@ -12,8 +15,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /** Internal storage root: the shell's default home. */
 @Suppress("DEPRECATION")

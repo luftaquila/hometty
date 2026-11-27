@@ -1,18 +1,19 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.shell
 
 import android.app.PendingIntent
 import android.content.Context
 import android.os.UserHandle
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.luftaquila.hometty.core.NotificationLines
-import io.luftaquila.hometty.core.printable
 import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
 import io.luftaquila.hometty.core.get
+import io.luftaquila.hometty.core.printable
 import io.luftaquila.hometty.data.Storage
 import io.luftaquila.hometty.platform.NetworkData
 import io.luftaquila.hometty.platform.NotificationHub
 import io.luftaquila.hometty.resources.message
+import io.luftaquila.hometty.runtime.ErrorBanner
 import io.luftaquila.hometty.terminal.TerminalSession
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

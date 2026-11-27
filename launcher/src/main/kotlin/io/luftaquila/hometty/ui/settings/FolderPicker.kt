@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.luftaquila.hometty.core.usableHomeFolder
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.shell.appFolder
+import io.luftaquila.hometty.shell.sharedStorage
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

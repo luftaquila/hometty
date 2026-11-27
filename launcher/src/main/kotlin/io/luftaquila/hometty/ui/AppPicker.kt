@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui
 
 import android.content.pm.LauncherApps
 import androidx.compose.foundation.*
@@ -25,6 +25,7 @@ import androidx.core.graphics.drawable.toBitmap
 import io.luftaquila.hometty.core.SearchIndex
 import io.luftaquila.hometty.platform.DeviceAccess
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.ui.settings.SettingsSearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

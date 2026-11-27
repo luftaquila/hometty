@@ -14,6 +14,7 @@ import io.luftaquila.hometty.core.StateStore
 import io.luftaquila.hometty.data.Secrets
 import io.luftaquila.hometty.data.Storage
 import io.luftaquila.hometty.platform.*
+import io.luftaquila.hometty.shell.TerminalNotices
 import javax.inject.Inject
 import javax.inject.Singleton
 

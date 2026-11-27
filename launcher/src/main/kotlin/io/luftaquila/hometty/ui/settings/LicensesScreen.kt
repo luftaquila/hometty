@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
 
 internal data class License(val name: String, val license: String, val asset: String)
 

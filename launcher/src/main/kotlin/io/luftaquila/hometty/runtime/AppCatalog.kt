@@ -1,8 +1,8 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.runtime
 
+import io.luftaquila.hometty.commands.Texts
 import io.luftaquila.hometty.core.AppNames
 import io.luftaquila.hometty.core.EntryStore
-import io.luftaquila.hometty.commands.Texts
 import io.luftaquila.hometty.platform.DeviceAccess
 import io.luftaquila.hometty.resources.R as TextR
 import javax.inject.Inject

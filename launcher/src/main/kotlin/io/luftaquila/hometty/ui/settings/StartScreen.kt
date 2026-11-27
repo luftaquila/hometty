@@ -1,4 +1,4 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import android.Manifest
 import android.content.Context
@@ -22,6 +22,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.ui.Header
+import io.luftaquila.hometty.ui.HomeViewModel
 
 fun notificationAccessGranted(context: Context): Boolean =
     context.packageName in NotificationManagerCompat.getEnabledListenerPackages(context)

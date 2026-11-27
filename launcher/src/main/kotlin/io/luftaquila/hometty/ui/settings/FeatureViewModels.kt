@@ -1,20 +1,26 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui.settings
 
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.luftaquila.hometty.core.Fonts
+import io.luftaquila.hometty.core.Settings
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.core.readBytesLimited
 import io.luftaquila.hometty.data.Storage
 import io.luftaquila.hometty.resources.R as TextR
+import io.luftaquila.hometty.runtime.ErrorBanner
+import io.luftaquila.hometty.runtime.LauncherRuntime
+import io.luftaquila.hometty.shell.TerminalNotices
+import io.luftaquila.hometty.ui.HomeViewModel
+import io.luftaquila.hometty.ui.LauncherViewModel
+import io.luftaquila.hometty.ui.TerminalFonts
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
 
 /** ZIP backup export and the restore preview. */
 @HiltViewModel

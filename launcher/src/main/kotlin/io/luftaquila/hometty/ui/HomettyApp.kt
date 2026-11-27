@@ -1,5 +1,6 @@
-package io.luftaquila.hometty
+package io.luftaquila.hometty.ui
 
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -7,9 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -21,16 +22,29 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import android.view.View
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.luftaquila.hometty.Route
 import io.luftaquila.hometty.core.NotificationLines
+import io.luftaquila.hometty.core.Settings
 import io.luftaquila.hometty.core.SettingsSnapshot
 import io.luftaquila.hometty.core.Themes
+import io.luftaquila.hometty.core.get
 import io.luftaquila.hometty.resources.R as TextR
 import io.luftaquila.hometty.resources.text
 import io.luftaquila.hometty.terminal.TerminalView
-import io.luftaquila.hometty.core.Settings
-import io.luftaquila.hometty.core.get
+import io.luftaquila.hometty.ui.settings.AboutScreen
+import io.luftaquila.hometty.ui.settings.BackupScreen
+import io.luftaquila.hometty.ui.settings.DonateScreen
+import io.luftaquila.hometty.ui.settings.FeatureModels
+import io.luftaquila.hometty.ui.settings.FontScreen
+import io.luftaquila.hometty.ui.settings.FontViewModel
+import io.luftaquila.hometty.ui.settings.LicensesScreen
+import io.luftaquila.hometty.ui.settings.SettingsGlyph
+import io.luftaquila.hometty.ui.settings.SettingsIcon
+import io.luftaquila.hometty.ui.settings.SettingsScreen
+import io.luftaquila.hometty.ui.settings.StartScreen
+import io.luftaquila.hometty.ui.settings.ThemeScreen
+import io.luftaquila.hometty.ui.settings.settingsColors
 
 fun color(value: String): Color = Color(android.graphics.Color.parseColor(value))
 
