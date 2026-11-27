@@ -4,6 +4,9 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -63,6 +66,8 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # Finish compilation and release its Gradle process before the emulator uses RAM.
+      - run: ./gradlew :launcher:assembleDebug :launcher:assembleDebugAndroidTest --max-workers=2 --no-daemon
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           # API 37 has no plain google_apis image; this one also runs with 16 KB pages.
@@ -71,10 +76,21 @@ jobs:
           arch: x86_64
           target: google_apis_ps16k
           profile: pixel_8
+          # This API 37 image enforces a 4 GB minimum; keep the test-only JVM small.
+          ram-size: 4096
           disable-animations: true
-          script: ./gradlew :launcher:connectedDebugAndroidTest
+          emulator-options: -no-window -gpu swangle -no-snapshot -noaudio -no-boot-anim
+          # Preserve Pixel 8's dp layout with one quarter of the software-rendered pixels.
+          pre-emulator-launch-script: >-
+            sed -i -e 's/^hw.lcd.width=.*/hw.lcd.width=540/'
+            -e 's/^hw.lcd.height=.*/hw.lcd.height=1200/'
+            -e 's/^hw.lcd.density=.*/hw.lcd.density=210/'
+            "$ANDROID_AVD_HOME/test.avd/config.ini"
+          script: ./gradlew :launcher:connectedDebugAndroidTest --max-workers=2 --no-daemon '-Dorg.gradle.jvmargs=-Xmx1g -Dfile.encoding=UTF-8'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: device-tests
-          path: launcher/build/reports/androidTests/
+          path: |
+            launcher/build/reports/androidTests/
+            launcher/build/outputs/androidTest-results/

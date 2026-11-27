@@ -5,6 +5,7 @@ import ast
 import bz2
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -192,7 +193,7 @@ def main():
         f'NDK_PROJECT_PATH={output}',
         f'APP_BUILD_SCRIPT={source / "Android.mk"}',
         f'NDK_APPLICATION_MK={source / "Application.mk"}',
-        '-j8',
+        f'-j{min(8, os.cpu_count() or 1)}',
     ], cwd=source / 'busybox', check=True)
     for abi in ABIS:
         destination = output / 'jniLibs' / abi / 'libbusybox.so'

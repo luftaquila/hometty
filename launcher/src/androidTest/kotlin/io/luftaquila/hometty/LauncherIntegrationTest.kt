@@ -82,11 +82,24 @@ class LauncherIntegrationTest {
             .bufferedReader()
             .use { it.readText() }
 
-    /** Whether an activity of [packageName] is the resumed one. */
-    private fun resumed(packageName: String) =
-        shell("dumpsys activity activities").lineSequence().any {
-            "ResumedActivity" in it && "$packageName/" in it
+    /** Wait for the focused UI, not ActivityManager's state ahead of the window transition. */
+    private fun focused(packageName: String) =
+        automation.rootInActiveWindow?.packageName?.toString() == packageName
+
+    private fun launcherFocused() = compose.runOnUiThread {
+        compose.activity.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED &&
+            compose.activity.hasWindowFocus()
+    }
+
+    private suspend fun returnToLauncher(session: TerminalSession) {
+        shell(
+            "am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n ${context.packageName}/io.luftaquila.hometty.MainActivity"
+        )
+        waitFor("the focused launcher again", session, 20000) {
+            launcherFocused() && session.atPrompt.value
         }
+        compose.waitForIdle()
+    }
 
     /** Waits up to [millis] for [done]; fails with [what] and, given [session], its screen. */
     private suspend fun waitFor(
@@ -489,11 +502,8 @@ class LauncherIntegrationTest {
         val probes = InstrumentationRegistry.getInstrumentation().context.packageName
         for (name in listOf("mixedcaseapp", "mixed case app", "한글 테스트 앱", "한글테스트앱")) {
             session.write("$name\n")
-            waitFor("$name to open", session, 8000) { resumed(probes) }
-            shell(
-                "am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n ${context.packageName}/io.luftaquila.hometty.MainActivity"
-            )
-            waitFor("the launcher again", session) { resumed(context.packageName) && session.atPrompt.value }
+            waitFor("$name to open", session, 8000) { focused(probes) }
+            returnToLauncher(session)
         }
         session.write("apps --gui\n")
         compose.waitUntil(5000) {
@@ -559,6 +569,10 @@ class LauncherIntegrationTest {
         compose.onNodeWithTag("search:input.toolbar").performClick()
         compose.onNodeWithTag("setting:input.toolbar").assertIsOff().performClick()
         compose.waitUntil(5000) { runBlocking { storage.snapshot().bool("input.toolbar") } }
+        // DataStore can finish before its Flow reaches the rendered switch.
+        compose.waitUntil(5000) {
+            compose.onAllNodes(hasTestTag("setting:input.toolbar") and isOn()).fetchSemanticsNodes().size == 1
+        }
         compose.onNodeWithTag("setting:input.toolbar").assertIsOn()
         compose.onNodeWithText("input.toolbar").assertDoesNotExist()
         compose.onNodeWithText(context.getString(TextR.string.label_save)).assertDoesNotExist()
@@ -906,7 +920,9 @@ class LauncherIntegrationTest {
     @Test
     fun aNotificationLineOpensItsNotificationAndCanHideItsApp(): Unit = runBlocking {
         val hub = (context.applicationContext as PlatformDependencies).notifications
-        val packageName = "com.android.settings"
+        // Exercise a real cross-package PendingIntent without starting the system Settings app,
+        // whose background ANR dialog can cover unrelated tests later in the suite.
+        val packageName = InstrumentationRegistry.getInstrumentation().context.packageName
         storage.set("notifications.enabled", "true")
         val terminal = homeTerminal()
         val session = requireNotNull(terminal.session)
@@ -915,7 +931,7 @@ class LauncherIntegrationTest {
             android.app.PendingIntent.getActivity(
                 context,
                 0,
-                android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+                android.content.Intent().setClassName(packageName, LaunchProbeActivity::class.java.name)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                 android.app.PendingIntent.FLAG_IMMUTABLE,
             )
@@ -970,15 +986,15 @@ class LauncherIntegrationTest {
         // shows once an activity start would have had time to happen.
         touch(terminal, 100f, y)
         delay(1500)
-        assertTrue(resumed(context.packageName))
+        assertTrue(launcherFocused())
         storage.set("notifications.tapToOpen", "true")
         compose.waitUntil(5000) { compose.runOnUiThread { terminal.onNoticeTap != null } }
         // Turned on, a tap opens what the notification opens. Opening another app's activity can
         // take a while on a busy emulator.
         touch(terminal, 100f, y)
-        waitFor("its activity", session, 20000) { resumed(packageName) }
-        shell("input keyevent KEYCODE_BACK")
-        waitFor("the launcher again", session, 20000) { resumed(context.packageName) }
+        waitFor("its activity", session, 20000) { focused(packageName) }
+        // A launcher activity's Back can return to the system home.
+        returnToLauncher(session)
 
         // The long-press menu's hide leaves the app out from now on.
         val id = requireNotNull(session.noticeAt(row, 0))
